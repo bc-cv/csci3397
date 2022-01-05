@@ -1,2 +1,2 @@
-# csci3390
-CSCI 3390: BIomedical Image Analysis (Boston College)
+# f21
+Fall 2021
