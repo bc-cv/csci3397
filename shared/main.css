@@ -2844,6 +2844,11 @@
         background-color: rgba(0, 0, 0, 0.025);
 
 		}
+  tr.gray:nth-child(n) {
+        background-color: rgba(0, 0, 0, 0.1);
+
+		}
+
 
 	table th {
 		color: #ffffff;
