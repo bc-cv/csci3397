@@ -1,0 +1,18 @@
+	1.	In 3 sentences, describe your startup idea.
+	•	What image(s) does it work on? What does it produce? Who uses it?
+
+	2.	What do people do today, and what’s the #1 pain point?
+	•	Name the current tool/process (e.g., ImageJ + manual clicks, QuPath, vendor software, Excel + screenshots).
+	•	Pain point must be specific: too slow, too many errors, too hard to use, too expensive, doesn’t work on 3D, breaks on new data.
+
+	3.	Who is the user and who is the payer?
+	•	Pick one real person title: “grad student in a microscopy core,” “pathologist,” “lab manager,” “pharma scientist,” “CRO analyst.”
+	•	If user ≠ payer, say both.
+
+	4.	What is one concrete result you promise, and how would you prove it in a killer demo?
+	•	Examples: “cut analysis time from 2 hours to 10 minutes,” “hit 90% agreement with expert labels,” “process 100 images overnight.”
+	•	Define your demo dataset and what “success” looks like.
+
+	5.	What is the smallest thing you can build in 2–4 weeks that someone would actually try?
+	•	A plugin, a web demo, a script + simple UI, a model on one task, a QC dashboard.
+	•	List: inputs needed, output shown, and what the user clicks first.
