@@ -1,0 +1,49 @@
+**Lecture 1: Introduction to Biomedical Image Analysis**
+
+**Total Time: 50 minutes**
+
+**[5 min] 0. Introduction**
+- **Course Staff**:
+  - Instructor: Prof. Donglai Wei; TAs: Jason Adhinarta, Ryan Clark.
+- **One thing to remember**: Use the course website (Canvas -> Course website).
+- **Immediate Action**: Lab 0 is out (Due Jan 24).
+
+**[10 min] 1. What is Biomedical Image Analysis (BIA)?**
+- **Core Concept**: Converting physical measurements into biological/medical insights.
+- **Example 1: Microscopy (Fluorescent)**
+  - Measurement: Cell size, cell count.
+  - Insight: Drug effectiveness (e.g., Drug Y inhibits cell growth).
+- **Example 2: Medical Imaging (X-ray)**
+  - Measurement: Rib length, lung volume.
+  - Insight: Diagnosis (cancer stage), Prognosis (survival rate).
+
+**[10 min] 2. Why Study BIA?**
+- **The Impact (Why it matters)**:
+  - Critical applications: Drugs/vaccines, medical devices, genomics.
+- **The Challenges**:
+  - **Input**: Handling diverse appearances in bioimages.
+  - **Output**: Disease complexity is high (infections, hereditary, mental).
+  - **Ethics**: Addressing fairness and racial bias in health algorithms.
+
+**[15 min] 3. Course Structure: How to learn BIA?**
+- **Technical Evolution**: Machine Learning (how) → Deep Learning (features) → Foundation Models (functionalities).
+- **Module I: Digital Image Processing (Weeks 2-6)**
+  - Focus: Standard pipelines (Acquisition → Pre-processing → Segmentation → Analysis).
+  - Outcome: Helping biologists with handy pipelines (Guest: Dr. Yapp).
+- **Module II: Deep Learning (Weeks 7-14)**
+  - Focus: The "MOLD" framework (Model + Optimization + Loss + Data).
+  - Outcome: In-depth understanding of models like U-Net and fetal head measurement.
+- **Module III: Foundation Modeling (Week 15)**
+  - Focus: Multimodal applications (Text, Video, 3D, Omics).
+  - Outcome: Reading cutting-edge research (Guests: Dr. Jiancheng Yang, Oishi Banerjee).
+
+**[10 min] 4. Logistics & Projects**
+- **Grading**:
+  - No quizzes or exams.
+  - Breakdown: 11 Labs (35%) + 4 Problem Sets (35%) + 1 Final Project (30%).
+- **Final Project**:
+  - **Timeline**: Teaming (Week 5) → Coding (Weeks 8-17) → Presentation (Week 15).
+  - **Types**:
+    - Research: Collaborating with BC professors (e.g., Folker, Johnson, Ranger).
+    - Engineering: Grand Challenge or Kaggle competitions.
+- **TODOs**: Join Discord, check office hours, watch Colab tutorial for Lab 0,.
