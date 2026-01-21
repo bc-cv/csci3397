@@ -1,0 +1,181 @@
+Week 1: Introduction to Coding LLMs and AI Development
+Topics
+
+Course logistics
+What is an LLM actually
+How to prompt effectively
+Reading
+
+Deep Dive into LLMs
+Prompt Engineering Overview
+Prompt Engineering Guide
+AI Prompt Engineering: A Deep Dive
+How OpenAI Uses Codex
+Assignment
+
+LLM Prompting Playground
+Mon 9/22: Introduction and how an LLM is made - Slides
+
+Fri 9/26: Power prompting for LLMs - Slides
+
+Week 2: The Anatomy of Coding Agents
+Topics
+
+Agent architecture and components
+Tool use and function calling
+MCP (Model Context Protocol)
+Reading
+
+MCP Introduction
+Sample MCP Server Implementations
+MCP Server Authentication
+MCP Server SDK
+MCP Registry
+MCP Food-for-Thought
+Assignment
+
+First Steps in the AI IDE
+Mon 9/29: Building a coding agent from scratch - Slides, Completed Exercise
+
+Fri 10/3: Building a custom MCP server- Slides, Completed Exercise
+
+Week 3: The AI IDE
+Topics
+
+Context management and code understanding
+PRDs for agents
+IDE integrations and extensions
+Reading
+
+Specs Are the New Source Code
+How Long Contexts Fail
+Devin: Coding Agents 101
+Getting AI to Work In Complex Codebases
+How FAANG Vibe Codes
+Writing Effective Tools for Agents
+Assignment
+
+Build a Custom MCP Server
+Mon 10/6: From first prompt to optimal IDE setup - Slides, Design Doc Template
+
+Fri 10/10: Silas Alberti, Head of Research Cognition - Slides
+
+Week 4: Coding Agent Patterns
+Topics
+
+Managing agent autonomy levels
+Human-agent collaboration patterns
+Reading
+
+How Anthropic Uses Claude Code
+Claude Best Practices
+Awesome Claude Agents
+Super Claude
+Good Context Good Code
+Peeking Under the Hood of Claude Code
+Assignment
+
+Coding with Claude Code
+Mon 10/13: How to be an agent manager - Slides
+
+Fri 10/17: Boris Cherney, Creator of Claude Code - Slides
+
+Week 5: The Modern Terminal
+Topics
+
+AI-enhanced command line interfaces
+Terminal automation and scripting
+Reading
+
+Warp University
+Warp vs Claude Code
+How Warp Uses Warp to Build Warp
+Assignment
+
+Agentic Development with Warp
+Mon 10/20: How to Build a Breakout AI Developer Product - Slides
+
+Fri 10/24: Zach Lloyd, CEO Warp - Slides
+
+Week 6: AI Testing and Security
+Topics
+
+Secure vibe coding
+History of vulnerability detection
+AI-generated test suites
+Reading
+
+SAST vs DAST
+Copilot Remote Code Execution via Prompt Injection
+Finding Vulnerabilities in Modern Web Apps Using Claude Code and OpenAI Codex
+Agentic AI Threats: Identity Spoofing and Impersonation Risks
+OWASP Top Ten: The Leading Web Application Security Risks
+Context Rot: Understanding Degradation in AI Context Windows
+Vulnerability Prompt Analysis with O3
+Assignment
+
+Writing Secure AI Code
+Mon 10/27: AI QA, SAST, DAST, and Beyond - Slides
+
+Fri 10/31: Isaac Evans, CEO Semgrep
+
+Week 7: Modern Software Support
+Topics
+
+What AI code systems can we trust
+Debugging and diagnostics
+Intelligent documentation generation
+Reading
+
+Code Reviews: Just Do It
+How to Review Code Effectively
+AI-Assisted Assessment of Coding Practices in Modern Code Review
+AI Code Review Implementation Best Practices
+Code Review Essentials for Software Teams
+Lessons from millions of AI code reviews
+Assignment
+
+Code Review Reps
+Mon 11/3: AI code review - Slides
+
+Fri 11/7: Tomas Reimers, CPO Graphite - Slides
+
+Week 8: Automated UI and App Building
+Topics
+
+Design and frontend for everyone
+Rapid UI/UX prototyping and iteration
+Assignment
+
+Multi-stack Web App Builds
+Mon 11/10: End-to-end apps with a single prompt - Slides
+
+Fri 11/14: Gaspar Garcia, Head of AI Research Vercel - Slides
+
+Week 9: Agents Post-Deployment
+Topics
+
+Monitoring and observability for AI systems
+Automated incident response
+Triaging and debugging
+Reading
+
+Introduction to Site Reliability Engineering
+Observability Basics You Should Know
+Kubernetes Troubleshooting with AI
+Your New Autonomous Teammate
+Role of Multi Agent Systems in Making Software Engineers AI-native
+Benefits of Agentic AI in On-call Engineering
+Mon 11/17: Incident response and DevOps - Slides
+
+Fri 11/21: Mayank Agarwal, CTO Resolve, and Milind Ganjoo, Technical Staff Resolve- Slides
+
+Week 10: What's Next for AI Software Engineering
+Topics
+
+Future of software development roles
+Emerging AI coding paradigms
+Industry trends and predictions
+Mon 12/1: Software development in 10 years
+
+Fri 12/5: Martin Casado, General Partner a16z
