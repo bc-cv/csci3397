@@ -216,12 +216,12 @@ maths: matrix
 </tr>
 <tr><td align=center colspan="5">No Class (Martin Luther King, Jr. Day)</td></tr>
 <tr>
-  <td rowspan=3 style="vertical-align:middle;text-align:center;">Filtering<br />[Week 2-3]</td>
+  <td rowspan=5 style="vertical-align:middle;text-align:center;">Filtering<br />[Week 2-3]</td>
 <td>Wed, Jan. 21</td>
 <td class="topic">
 Lec. 4: Pixel-level Processing
 <div class="subtopic">
-intensity transforms, histogram ops
+auto-contrast, thresholding
 </div>
 </td>
 <td>
@@ -234,10 +234,9 @@ intensity transforms, histogram ops
 
 <td>Fri, Jan. 23</td>
 <td class="topic">
-Lec. 5: Patch-level Processing (Convolution)
+<a href="https://www.dropbox.com/scl/fi/96h38wws67ig3sst32lz6/lec5-patch-operations.key.pdf?rlkey=ouz0qazu8mkgp45424bpj9xv5&dl=0">Lec. 5: Patch-level Processing</a>
 <div class="subtopic">
 filtering, padding
-<br/>  impulse/box/Gaussian; smoothing vs sharpening
 </div>
 </td>
 <td>
@@ -250,26 +249,47 @@ filtering, padding
 </tr>
 <tr>
 <td>Mon, Jan. 26</td>
+<td align=center colspan="2">No Class (Snow Day)</td>
+<td><font color=#800000>lab1 due</font></td>
+</tr>
+<tr>
+<td>Wed, Jan. 28</td>
 <td class="topic">
-Lec. 6: Nonlinear Filtering
+<a href="https://www.dropbox.com/scl/fi/vw3bp692i806e03yz42qz/lec6-patch-convolution.key.pdf?rlkey=elaao0y6p2irpsz5op1yao8h3&dl=0">Lec. 6: Convolution</a>
 <div class="subtopic">
-bilateral; correlation/SSD templates
+  linear, shift-invariant
+<br/>  impulse/box/Gaussian
+</div>
+</td>
+<td>
+</td>
+<td></td>
+</tr>
+<tr>
+<td>Fri, Jan. 30</td>
+<td class="topic">
+<a href="https://www.dropbox.com/scl/fi/9cfwomainuyrd07d3twz2/lec7-patch-derivative.key.pdf?rlkey=t4m0nx3qz5g1hr14ujra8la3o&dl=0">Lec. 7: More Filters</a>
+<div class="subtopic">
+Edge, Laplacian
+<br/> Gaussian, Bilateral
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>[T] Chap. 4.3.1</li>
+  <li>[T] Chap. 4.2.3, 5.1</li>
 </ul>
 </td>
-<td><font color=#800000>lab1 due</font></td>
+<td>
+  
+</td>
 </tr>
 <tr>
-<td rowspan=5 style="vertical-align:middle;text-align:center;">Applications<br />[Week 3-4]</td>
-<td>Wed, Jan. 28</td>
+<td rowspan=3 style="vertical-align:middle;text-align:center;">Applications<br />[Week 4]</td>
+<td>Mon, Feb. 2</td>
 <td class="topic">
-Lec. 7: Image Transformation
+Lec. 8: Image Transformation
 <div class="subtopic">
-Image transformation
+point cloud, homography
 </div>
 </td>
 <td>
@@ -278,47 +298,15 @@ Image transformation
   <li><a href="https://www.cs.princeton.edu/courses/archive/spr11/cos426/notes/cos426_s11_lecture03_warping.pdf">Warping notes</a></li>
 </ul>
 </td>
-<td></td>
-</tr>
-<tr>
-
-<td>Fri, Jan. 30</td>
-<td class="topic">
-Lec. 8: Scale Invariant Feature Transformation (SIFT)
-<div class="subtopic">
-
-</div>
-</td>
-<td>
-<ul class="materials">
-  <li>[T] Chap. 4.2.3, 5.1</li>
-</ul>
-</td>
-<td></td>
-</tr>
-<tr>
-<td>Mon, Feb. 2</td>
-<td class="topic">
-Lec. 9: Transformation Estimation
-<div class="subtopic">
-Linear regression, RANSAC
-</div>
-</td>
-<td>
-<ul class="materials">
-
-</ul>
-</td>
 <td><font color=#800000>lab2 due</font></td>
 </tr>
 <tr>
 
 <td>Wed, Feb. 4</td>
 <td class="topic">
-Lec. 10: Image Segmentation
+Lec. 9: Transformation Estimation
 <div class="subtopic">
-Why: drug discovery, connectomics
-What: semantic, instance, panoptic
+  Linear regression, RANSAC
 </div>
 </td>
 <td>
@@ -333,9 +321,11 @@ What: semantic, instance, panoptic
 
 <td>Fri, Feb. 6</td>
 <td class="topic">
-Lec. 11: Morphological Operation
+Lec. 10: Image Segmentation
 <div class="subtopic">
-threshold/CC/watershed; Dice/IoU; morphology
+Why: drug discovery, connectomics
+What: semantic, instance, panoptic
+How: CC/watershed, Dice/IoU
 </div>
 </td>
 <td>
@@ -352,7 +342,7 @@ threshold/CC/watershed; Dice/IoU; morphology
 <td rowspan=3 style="vertical-align:middle;text-align:center;">ML Pipeline<br />[Week 5]</td>
 <td>Mon, Feb. 9</td>
 <td class="topic">
-Lec. 12: ML Basics
+Lec. 11: ML Basics
 <div class="subtopic">
 splits, leakage, metrics; baseline mindset
 </div>
@@ -369,7 +359,7 @@ splits, leakage, metrics; baseline mindset
 
 <td>Wed, Feb. 11</td>
 <td class="topic">
-Lec. 13: Unsupervised Learning
+Lec. 12: Unsupervised Learning
 <div class="subtopic">
 k-means, PCA; embeddings as features
 </div>
@@ -386,7 +376,7 @@ k-means, PCA; embeddings as features
 
 <td>Fri, Feb. 13</td>
 <td class="topic">
-Lec. 14: Supervised Learning Basics
+Lec. 13: Supervised Learning Basics
 <div class="subtopic">
 linear regression; basis functions; regularization
 </div>
@@ -403,7 +393,7 @@ linear regression; basis functions; regularization
 <td rowspan=3 style="vertical-align:middle;text-align:center;">Optimization + Linear Models<br />[Week 6]</td>
 <td>Mon, Feb. 16</td>
 <td class="topic">
-Lec. 15: Linear Classification
+Lec. 14: Linear Classification
 <div class="subtopic">
 logistic regression; cross-entropy; calibration
 </div>
@@ -419,7 +409,7 @@ logistic regression; cross-entropy; calibration
 
 <td>Wed, Feb. 18</td>
 <td class="topic">
-Lec. 16: Optimization & Generalization
+Lec. 15: Optimization & Generalization
 <div class="subtopic">
 SGD/Adam; schedules; overfitting controls
 </div>
@@ -435,7 +425,7 @@ SGD/Adam; schedules; overfitting controls
 
 <td>Fri, Feb. 20</td>
 <td class="topic">
-Lec. 17: Modern Software for ML
+Lec. 16: Modern Software for ML
 <div class="subtopic">
 reproducibility, configs, testing, CI; experiment tracking
 </div>
@@ -452,7 +442,7 @@ reproducibility, configs, testing, CI; experiment tracking
 <td rowspan=3 style="vertical-align:middle;text-align:center;">Neural Nets + CNNs<br />[Week 7]</td>
 <td>Mon, Feb. 23</td>
 <td class="topic">
-Lec. 18: MLPs I
+Lec. 17: MLPs I
 <div class="subtopic">
 nonlinearities, softmax; capacity vs data
 </div>
@@ -468,7 +458,7 @@ nonlinearities, softmax; capacity vs data
 
 <td>Wed, Feb. 25</td>
 <td class="topic">
-Lec. 19: MLPs II (Backprop in Practice)
+Lec. 18: MLPs II (Backprop in Practice)
 <div class="subtopic">
 training loops; dropout; debugging
 </div>
@@ -485,7 +475,7 @@ training loops; dropout; debugging
 
 <td>Fri, Feb. 27</td>
 <td class="topic">
-Lec. 20: CNNs I
+Lec. 19: CNNs I
 <div class="subtopic">
 convolution/pooling; inductive bias
 </div>
@@ -503,7 +493,7 @@ convolution/pooling; inductive bias
 <td rowspan=3 style="vertical-align:middle;text-align:center;">CNN Applications<br />[Week 9]</td>
 <td>Mon, Mar. 9</td>
 <td class="topic">
-Lec. 21: CNNs II (ResNet + Transfer Learning)
+Lec. 20: CNNs II (ResNet + Transfer Learning)
 <div class="subtopic">
 fine-tuning, augmentation, compute tips
 </div>
@@ -520,7 +510,7 @@ fine-tuning, augmentation, compute tips
 
 <td>Wed, Mar. 11</td>
 <td class="topic">
-Lec. 22: Data-centric Training
+Lec. 21: Data-centric Training
 <div class="subtopic">
 imbalance, label noise; error analysis
 </div>
@@ -537,7 +527,7 @@ imbalance, label noise; error analysis
 
 <td>Fri, Mar. 13</td>
 <td class="topic">
-Lec. 23: Deep Segmentation (U-Net)
+Lec. 22: Deep Segmentation (U-Net)
 <div class="subtopic">
 encoder-decoder; Dice/Focal losses
 </div>
@@ -554,7 +544,7 @@ encoder-decoder; Dice/Focal losses
 <td rowspan=3 style="vertical-align:middle;text-align:center;">Modern Vision Models<br />[Week 10]</td>
 <td>Mon, Mar. 16</td>
 <td class="topic">
-Lec. 24: Object Detection
+Lec. 23: Object Detection
 <div class="subtopic">
 R-CNN/YOLO/DETR; mAP/FROC
 </div>
@@ -571,7 +561,7 @@ R-CNN/YOLO/DETR; mAP/FROC
 
 <td>Wed, Mar. 18</td>
 <td class="topic">
-Lec. 25: WSI / Weak Labels (MIL)
+Lec. 24: WSI / Weak Labels (MIL)
 <div class="subtopic">
 tiling, MIL attention; pathology workflows
 </div>
@@ -588,7 +578,7 @@ tiling, MIL attention; pathology workflows
 
 <td>Fri, Mar. 20</td>
 <td class="topic">
-Lec. 26: Attention & Vision Transformers
+Lec. 25: Attention & Vision Transformers
 <div class="subtopic">
 tokens, positional encodings; bridge to FMs
 </div>
@@ -606,7 +596,7 @@ tokens, positional encodings; bridge to FMs
 <td rowspan=3 style="vertical-align:middle;text-align:center;">FM Basics<br />[Week 11]</td>
 <td>Mon, Mar. 23</td>
 <td class="topic">
-Lec. 27: Foundation Models Overview
+Lec. 26: Foundation Models Overview
 <div class="subtopic">
 pretraining objectives; transfer; evaluation
 </div>
@@ -623,7 +613,7 @@ pretraining objectives; transfer; evaluation
 
 <td>Wed, Mar. 25</td>
 <td class="topic">
-Lec. 28: Self-Supervised Vision
+Lec. 27: Self-Supervised Vision
 <div class="subtopic">
 contrastive + masked modeling (MAE/DINO ideas)
 </div>
@@ -639,7 +629,7 @@ contrastive + masked modeling (MAE/DINO ideas)
 
 <td>Fri, Mar. 27</td>
 <td class="topic">
-Lec. 29: Parameter-Efficient Tuning (PEFT)
+Lec. 28: Parameter-Efficient Tuning (PEFT)
 <div class="subtopic">
 adapters/LoRA; domain adaptation
 </div>
@@ -655,7 +645,7 @@ adapters/LoRA; domain adaptation
 <td rowspan=2 style="vertical-align:middle;text-align:center;">Promptable + Domain FMs<br />[Week 12]</td>
 <td>Mon, Mar. 30</td>
 <td class="topic">
-Lec. 30: Promptable Segmentation
+Lec. 29: Promptable Segmentation
 <div class="subtopic">
 SAM-style interaction; labeling workflows
 </div>
@@ -671,7 +661,7 @@ SAM-style interaction; labeling workflows
 
 <td>Wed, Apr. 1</td>
 <td class="topic">
-Lec. 31: Biomedical Vision FMs + Retrieval
+Lec. 30: Biomedical Vision FMs + Retrieval
 <div class="subtopic">
 embeddings, nearest neighbors; gigapixel issues
 </div>
@@ -688,7 +678,7 @@ embeddings, nearest neighbors; gigapixel issues
 <td rowspan=2 style="vertical-align:middle;text-align:center;">Multimodal + Generative FMs<br />[Week 13]</td>
 <td>Wed, Apr. 8</td>
 <td class="topic">
-Lec. 32: Vision-Language Models in Biomed
+Lec. 31: Vision-Language Models in Biomed
 <div class="subtopic">
 image+text alignment; report/Q&A; PathChat pattern
 </div>
@@ -706,7 +696,7 @@ image+text alignment; report/Q&A; PathChat pattern
 
 <td>Fri, Apr. 10</td>
 <td class="topic">
-Lec. 33: Generative Models for Imaging
+Lec. 32: Generative Models for Imaging
 <div class="subtopic">
 diffusion for augmentation/inpainting; synthetic data
 </div>
@@ -724,7 +714,7 @@ diffusion for augmentation/inpainting; synthetic data
 <td rowspan=3 style="vertical-align:middle;text-align:center;">LLM Tooling + RAG<br />[Week 14]</td>
 <td>Mon, Apr. 13</td>
 <td class="topic">
-Lec. 34: LLM Tooling for Imaging Products
+Lec. 33: LLM Tooling for Imaging Products
 <div class="subtopic">
 prompting, structured outputs, tool calling
 </div>
@@ -740,7 +730,7 @@ prompting, structured outputs, tool calling
 
 <td>Wed, Apr. 15</td>
 <td class="topic">
-Lec. 35: RAG + Evaluation Harness
+Lec. 34: RAG + Evaluation Harness
 <div class="subtopic">
 retrieval, citations; testing prompts/agents
 </div>
@@ -757,7 +747,7 @@ retrieval, citations; testing prompts/agents
 
 <td>Fri, Apr. 17</td>
 <td class="topic">
-Lec. 36: Agents I
+Lec. 35: Agents I
 <div class="subtopic">
 planner/executor; tool use; guardrails
 </div>
@@ -774,7 +764,7 @@ planner/executor; tool use; guardrails
 <td rowspan=2 style="vertical-align:middle;text-align:center;">Agentic Systems<br />[Week 15]</td>
 <td>Tue, Apr. 21 <br />(Mon class)</td>
 <td class="topic">
-Lec. 37: Agents II (Workflow Automation)
+Lec. 36: Agents II (Workflow Automation)
 <div class="subtopic">
 automate experiments; reports; ablations
 </div>
@@ -790,7 +780,7 @@ automate experiments; reports; ablations
 
 <td>Wed, Apr. 22</td>
 <td class="topic">
-Lec. 38: Productization & Deployment
+Lec. 37: Productization & Deployment
 <div class="subtopic">
 latency, monitoring, privacy; demo clinic
 </div>
