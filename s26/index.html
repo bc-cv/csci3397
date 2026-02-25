@@ -159,7 +159,7 @@
 
                   <!-- Start schedule -->
 <tbody>
-<tr><td align=center colspan="5"><h3><font color=#800000>Theme 1: Image Processing </font></h3></td></tr>
+<tr><td align=center colspan="5"><h3><font color=#800000>Theme 1: Digital Image Processing </font></h3></td></tr>
 <tr>
 <td rowspan=3 style="vertical-align:middle;text-align:center;">Image Basics<br />[Week 1]</td>
 <td>Mon, Jan. 12</td>
@@ -338,7 +338,7 @@ What: semantic, instance, panoptic
 </tr>
 <tr><td align=center colspan="5"><h3><font color=#800000>Theme 2: Deep Learning </font></h3></td></tr>
 <tr>
-<td rowspan=6 style="vertical-align:middle;text-align:center;">AlexNet<br />[Week 5-6]</td>
+<td rowspan=9 style="vertical-align:middle;text-align:center;">AlexNet<br />[Week 5-7]</td>
 <td>Mon, Feb. 9</td>
 <td class="topic">
 <a href="https://www.dropbox.com/scl/fi/dn7n496z6jwpbjnfapedr/lec11-ml-overview.key.pdf?rlkey=g4owihlmss4i6gns0u7zyk353&dl=0">Lec. 11: ML Basics</a>
@@ -442,34 +442,22 @@ Optimization: chain rule, dynamic programming
 <td></td>
 </tr>
 <tr>
-<td rowspan=3 style="vertical-align:middle;text-align:center;">Neural Nets + CNNs<br />[Week 7]</td>
 <td>Mon, Feb. 23</td>
-<td class="topic">
-Lec. 17: MLPs I
-<div class="subtopic">
-nonlinearities, softmax; capacity vs data
-</div>
-</td>
-<td>
-<ul class="materials">
-  <li>[F] Chap. 3.4, 4.5</li>
-</ul>
-</td>
+<td align=center colspan="2">No Class (Snow Day)</td>
 <td></td>
 </tr>
 <tr>
 
 <td>Wed, Feb. 25</td>
 <td class="topic">
-Lec. 18: MLPs II (Backprop in Practice)
+Lec. 17: Convolutional Neural Network (CNN)
 <div class="subtopic">
-training loops; dropout; debugging
+convolutional layers, pooling layers
 </div>
 </td>
 <td>
 <ul class="materials">
   <li>[F] Chap. 3.4, 4.5</li>
-  <li>Coding: PyTorch training loops</li>
 </ul>
 </td>
 <td><font color=#800000>lab5 due</font></td>
@@ -478,15 +466,17 @@ training loops; dropout; debugging
 
 <td>Fri, Feb. 27</td>
 <td class="topic">
-Lec. 19: CNNs I
+Lec. 18: Modern CNNs
 <div class="subtopic">
-convolution/pooling; inductive bias
+model: ResNet, ConvNext
+<br/>optimization: fine-tuning
+<br/>data: augmentation
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>[F] Chap. 4.4, 5.2</li>
-  <li>Papers: <a href="http://vision.stanford.edu/cs598_spring07/papers/Lecun98.pdf">LeNet</a>, <a href="https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf">AlexNet</a></li>
+  <li>[F] Chap. 4.6-4.7</li>
+  <li>Papers: <a href="http://openaccess.thecvf.com/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf">ResNet</a></li>
 </ul>
 </td>
 <td><font color=#800000>fp proposal due</font></td>
@@ -496,7 +486,7 @@ convolution/pooling; inductive bias
 <td rowspan=3 style="vertical-align:middle;text-align:center;">CNN Applications<br />[Week 9]</td>
 <td>Mon, Mar. 9</td>
 <td class="topic">
-Lec. 20: CNNs II (ResNet + Transfer Learning)
+Lec. 20: ResNet + Transfer Learning
 <div class="subtopic">
 fine-tuning, augmentation, compute tips
 </div>
