@@ -1,2 +1,8 @@
 *.swp
 public/dl_gen/img_align_celeba.zip
+
+# s26 lab images: keep local, do not push to server
+s26/lab/*.tiff
+s26/lab/*.jpg
+s26/lab/*.gif
+s26/lab/*.png
