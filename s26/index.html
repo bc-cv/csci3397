@@ -166,9 +166,8 @@
 <td class="topic">
 <a href="https://www.dropbox.com/scl/fi/bn94lb0wose8qy7uec7kb/lec1-intro.key.pdf?rlkey=euxoysqh7jzztyto3s4v1fvse&dl=0">Lec. 1: Introduction</a>
 <div class="subtopic">
-What: Overview
-<br/>Why: Motivation
-<br/>How: Syllabus
+overview, motivation, syllabus
+<br/><font color=#800000>AI in healthcare, microscopy, radiology</font>
 </div>
 </td>
 <td>
@@ -185,8 +184,8 @@ What: Overview
 <td class="topic">
 <a href="https://www.dropbox.com/scl/fi/1pdzsxr9yeyko2wjeisdj/lec2-image_formation.key.pdf?rlkey=zzxtsr6cuu79p3w79mewkteki&dl=0">Lec. 2: Image Basics</a>
 <div class="subtopic">
-core: light, object,camera, physics
-  <br/>natural image, microscopy, medical devices
+light, object, camera, physics
+<br/><font color=#800000>microscopy, X-ray/CT, MRI, ultrasound imaging</font>
 </div>
 </td>
 <td>
@@ -202,8 +201,8 @@ core: light, object,camera, physics
 <td class="topic">
 <a href="https://www.dropbox.com/scl/fi/r2twvhbtvxckqlnkf17ys/lec3-digital_image.key.pdf?rlkey=gn8sas4cjxuexadwzxb3vhqz7&dl=0">Lec. 3: Digital Image Basics</a>
 <div class="subtopic">
-maths: matrix
-<br/>code: python libraries
+matrix, python libraries
+<br/><font color=#800000>loading and visualizing medical scans</font>
 </div>
 </td>
 <td>
@@ -222,6 +221,7 @@ maths: matrix
 <a href="https://www.dropbox.com/scl/fi/q64j2onjkei41utuy7q1h/lec4-pixel-operations.key.pdf?rlkey=y9b4aesqdsk39w1idfdvhfm7j&dl=0">Lec. 4: Pixel-level Processing</a>
 <div class="subtopic">
 auto-contrast, thresholding
+<br/><font color=#800000>contrast enhancement for histology slides</font>
 </div>
 </td>
 <td>
@@ -237,6 +237,7 @@ auto-contrast, thresholding
 <a href="https://www.dropbox.com/scl/fi/96h38wws67ig3sst32lz6/lec5-patch-operations.key.pdf?rlkey=ouz0qazu8mkgp45424bpj9xv5&dl=0">Lec. 5: Patch-level Processing</a>
 <div class="subtopic">
 filtering, padding
+<br/><font color=#800000>denoising fluorescence microscopy images</font>
 </div>
 </td>
 <td>
@@ -257,8 +258,9 @@ filtering, padding
 <td class="topic">
 <a href="https://www.dropbox.com/scl/fi/vw3bp692i806e03yz42qz/lec6-patch-convolution.key.pdf?rlkey=elaao0y6p2irpsz5op1yao8h3&dl=0">Lec. 6: Convolution</a>
 <div class="subtopic">
-  linear, shift-invariant
+  convolution = linear+shift-invariant
 <br/>  impulse/box/Gaussian
+<br/><font color=#800000>smoothing MRI scans, noise reduction</font>
 </div>
 </td>
 <td>
@@ -270,8 +272,9 @@ filtering, padding
 <td class="topic">
 <a href="https://www.dropbox.com/scl/fi/9cfwomainuyrd07d3twz2/lec7-patch-derivative.key.pdf?rlkey=t4m0nx3qz5g1hr14ujra8la3o&dl=0">Lec. 7: More Filters</a>
 <div class="subtopic">
-Edge, Laplacian
-<br/> Gaussian, Bilateral
+derivative: edge, laplacian
+<br/>diffusion: Gaussian, Bilateral
+<br/><font color=#800000>edge detection in cell boundaries</font>
 </div>
 </td>
 <td>
@@ -290,6 +293,7 @@ Edge, Laplacian
 <a href="https://www.dropbox.com/scl/fi/oe9u3z5xrp4qco1ec88q3/lec8-image-transformation.key.pdf?rlkey=eah38xz97i5jr59loedhlz45v&dl=0">Lec. 8: Image Transformation</a>
 <div class="subtopic">
 point cloud, image warping
+<br/><font color=#800000>aligning serial tissue sections</font>
 </div>
 </td>
 <td>
@@ -307,6 +311,7 @@ point cloud, image warping
 <a href="https://www.dropbox.com/scl/fi/cg1483ua33lqz6lev85mi/lec9-transformation_estimation.key.pdf?rlkey=mp8u6s5c15qdq3hq9s97hfcmq&dl=0">Lec. 9: Transformation Estimation</a>
 <div class="subtopic">
   Linear regression, RANSAC
+<br/><font color=#800000>stitching whole-slide microscopy images</font>
 </div>
 </td>
 <td>
@@ -323,8 +328,8 @@ point cloud, image warping
 <td class="topic">
 <a href="https://www.dropbox.com/scl/fi/foeibjdlam5w2uk4obsgp/lec10-image-seg.key.pdf?rlkey=g4wlg8pxhv2oks7gwl6oysp28&dl=0">Lec. 10: Image Segmentation</a>
 <div class="subtopic">
-Why: drug discovery, connectomics
-What: semantic, instance, panoptic
+semantic, instance, panoptic
+<br/><font color=#800000>cell/organelle segmentation in EM</font>
 </div>
 </td>
 <td>
@@ -338,12 +343,13 @@ What: semantic, instance, panoptic
 </tr>
 <tr><td align=center colspan="5"><h3><font color=#800000>Theme 2: Deep Learning </font></h3></td></tr>
 <tr>
-<td rowspan=9 style="vertical-align:middle;text-align:center;">AlexNet<br />[Week 5-7]</td>
+    <td rowspan=9 style="vertical-align:middle;text-align:center;">CNN-based<br />Models<br />[Week 5-7]</td>
 <td>Mon, Feb. 9</td>
 <td class="topic">
 <a href="https://www.dropbox.com/scl/fi/dn7n496z6jwpbjnfapedr/lec11-ml-overview.key.pdf?rlkey=g4owihlmss4i6gns0u7zyk353&dl=0">Lec. 11: ML Basics</a>
 <div class="subtopic">
 splits, leakage, metrics; baseline mindset
+<br/><font color=#800000>patient-level splits in clinical datasets</font>
 </div>
 </td>
 <td>
@@ -361,6 +367,7 @@ splits, leakage, metrics; baseline mindset
     <a href="https://www.dropbox.com/scl/fi/0rbeei3t7fqilr8dc2txi/lec12-ml-lr.key.pdf?rlkey=jwp811n85b01sh6nglj0j1zbs&dl=0">Lec. 12: Linear Regression</a>
 <div class="subtopic">
 linear regression; basis functions; regularization
+<br/><font color=#800000>predicting cell count from image features</font>
 </div>
 </td>
 <td>
@@ -380,6 +387,7 @@ linear regression; basis functions; regularization
 Model: logistic regression
 <br/>Loss: binary cross-entropy
 <br/>Optimizer: SGD
+<br/><font color=#800000>malignant vs. benign classification</font>
 </div>
 </td>
 <td>
@@ -400,6 +408,7 @@ Model: logistic regression
 Model: softmax
 <br/>Loss: cross-entropy
 <br/>Optimizer: Momentum
+<br/><font color=#800000>tissue type classification in pathology</font>
 </div>
 </td>
 <td>
@@ -417,6 +426,7 @@ Model: softmax
 <div class="subtopic">
 Pytorch/GPU Basics
 <br/>Model: nonlinear activation function
+<br/><font color=#800000>skin lesion classification (dermoscopy)</font>
 </div>
 </td>
 <td>
@@ -433,6 +443,7 @@ Pytorch/GPU Basics
     <a href="https://www.dropbox.com/scl/fi/4axdpqa5r8sgmdqn195hg/lec16-mlp2.key.pdf?rlkey=k611dwol1084btr3h1uicxy5u&dl=0">Lec. 16: Backpropagation</a>
 <div class="subtopic">
 Optimization: chain rule, dynamic programming
+<br/><font color=#800000>training networks on biomedical benchmarks</font>
 </div>
 </td>
 <td>
@@ -453,6 +464,7 @@ Optimization: chain rule, dynamic programming
     <a href="https://www.dropbox.com/scl/fi/ov0ygmcne49lz27lxic2r/lec17-cnn.key.pdf?rlkey=k84cks8utf5m0k7rpjl0vczxh&dl=0">Lec. 17: Convolutional Neural Network (CNN)</a>
 <div class="subtopic">
 convolutional layers, pooling layers
+<br/><font color=#800000>chest X-ray screening</font>
 </div>
 </td>
 <td>
@@ -469,30 +481,32 @@ convolutional layers, pooling layers
     <a href="https://www.dropbox.com/scl/fo/l99l3rct3eyq8gik7fsfh/APgwcpSiGWwtMiRyGQ37chI?rlkey=2yxaououzgcv55nrnila55j5x&dl=0">Lec. 18: Modern CNNs</a>
 <div class="subtopic">
 model: ResNet, ConvNext, MedConvNext
+<br/><font color=#800000>retinal disease grading (fundoscopy)</font>
 </div>
 </td>
 <td>
 <ul class="materials">
   <li>[F] Chap. 4.6-4.7</li>
-  <li>Papers: <a href="http://openaccess.thecvf.com/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf">ResNet</a></li>
+  <li>Papers: <a href="http://openaccess.thecvf.com/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf">ResNet</a>, <a href="https://arxiv.org/abs/22013545">ConvNeXt</a></li>
 </ul>
 </td>
 <td><font color=#800000>fp proposal due</font></td>
 </tr>
 <tr><td align=center colspan="5">No Class (Spring Vacation: Mar. 2–7)</td></tr>
 <tr>
-<td rowspan=3 style="vertical-align:middle;text-align:center;">CNN Applications<br />[Week 9]</td>
+<td rowspan=4 style="vertical-align:middle;text-align:center;">Applications<br />[Week 9]</td>
 <td>Mon, Mar. 9</td>
 <td class="topic">
-Lec. 20: ResNet + Transfer Learning
+Lec. 19: Image-based Prediction
 <div class="subtopic">
-fine-tuning, augmentation, compute tips
+transfer learning, data augmentation, training tips
+<br/><font color=#800000>fine-tuning ImageNet models on histology</font>
 </div>
 </td>
 <td>
 <ul class="materials">
   <li>[F] Chap. 4.6-4.7</li>
-  <li>Papers: <a href="http://openaccess.thecvf.com/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf">ResNet</a></li>
+  <li>Tutorial: <a href="https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html">PyTorch transfer learning</a></li>
 </ul>
 </td>
 <td></td>
@@ -501,15 +515,17 @@ fine-tuning, augmentation, compute tips
 
 <td>Wed, Mar. 11</td>
 <td class="topic">
-Lec. 21: Data-centric Training
+Lec. 20: Object Detection
 <div class="subtopic">
-imbalance, label noise; error analysis
+bounding boxes, R-CNN/YOLO; mAP metric
+<br/><font color=#800000>lung nodule detection in CT</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Paper: <a href="https://arxiv.org/abs/22013545">ConvNeXt</a> (modern CNN training recipe)</li>
-  <li>Topics: augmentation, label smoothing, robustness</li>
+  <li>[F] Chap. 6.3</li>
+  <li>Paper: <a href="https://arxiv.org/abs/1506.01497">Faster R-CNN</a></li>
+  <li>Video: <a href="https://www.youtube.com/watch?v=9s_FpMpdYW8">YOLO overview</a></li>
 </ul>
 </td>
 <td><font color=#800000>lab6 due</font></td>
@@ -518,9 +534,10 @@ imbalance, label noise; error analysis
 
 <td>Fri, Mar. 13</td>
 <td class="topic">
-Lec. 22: Deep Segmentation (U-Net)
+Lec. 21: Object Segmentation
 <div class="subtopic">
-encoder-decoder; Dice/Focal losses
+encoder-decoder (U-Net); Dice/Focal loss
+<br/><font color=#800000>organ segmentation in CT/MRI</font>
 </div>
 </td>
 <td>
@@ -532,35 +549,37 @@ encoder-decoder; Dice/Focal losses
 <td><font color=#800000>ps2 due</font></td>
 </tr>
 <tr>
-<td rowspan=3 style="vertical-align:middle;text-align:center;">Modern Vision Models<br />[Week 10]</td>
 <td>Mon, Mar. 16</td>
 <td class="topic">
-Lec. 23: Object Detection
+Lec. 22: Image Generation
 <div class="subtopic">
-R-CNN/YOLO/DETR; mAP/FROC
+VAE, GAN basics; synthetic biomedical samples
+<br/><font color=#800000>augmenting rare disease datasets</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>[F] Chap. 6.3</li>
-  <li>Transformer detection: <a href="https://arxiv.org/abs/2005.12872">DETR</a></li>
+  <li>[F] Chap. 5.1-5.3</li>
+  <li>Paper: <a href="https://arxiv.org/abs/1406.2661">GAN</a>, <a href="https://arxiv.org/abs/1312.6114">VAE</a></li>
 </ul>
 </td>
 <td></td>
 </tr>
 <tr>
 
+<td rowspan=3 style="vertical-align:middle;text-align:center;">Transformer-based Models<br />[Week 10]</td>
 <td>Wed, Mar. 18</td>
 <td class="topic">
-Lec. 24: WSI / Weak Labels (MIL)
+Lec. 23: Attention Module
 <div class="subtopic">
-tiling, MIL attention; pathology workflows
+self-attention basics; MIL for pathology
+<br/><font color=#800000>whole-slide image classification</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Weak labels + MIL survey/primer (TBA)</li>
-  <li>Pathology workflow: tiling → aggregation → slide-level prediction</li>
+  <li>[F] Chap. 4.8</li>
+  <li>Video: <a href="https://www.youtube.com/watch?v=eMlx5fFNoYc">Attention mechanism</a></li>
 </ul>
 </td>
 <td><font color=#800000>lab7 due</font></td>
@@ -569,9 +588,10 @@ tiling, MIL attention; pathology workflows
 
 <td>Fri, Mar. 20</td>
 <td class="topic">
-Lec. 25: Attention & Vision Transformers
+Lec. 24: Transformer Model
 <div class="subtopic">
-tokens, positional encodings; bridge to FMs
+tokenization, positional encoding, multi-head attention
+<br/><font color=#800000>3D medical image analysis</font>
 </div>
 </td>
 <td>
@@ -582,36 +602,39 @@ tokens, positional encodings; bridge to FMs
 </td>
 <td><font color=#800000>fp check-in (baseline)</font></td>
 </tr>
-<tr><td align=center colspan="5"><h3><font color=#800000>Theme 3: Foundation Models</font></h3></td></tr>
 <tr>
-<td rowspan=3 style="vertical-align:middle;text-align:center;">FM Basics<br />[Week 11]</td>
 <td>Mon, Mar. 23</td>
 <td class="topic">
-Lec. 26: Foundation Models Overview
+Lec. 25: Transformer Models in Vision
 <div class="subtopic">
-pretraining objectives; transfer; evaluation
+ViT, hybrid models; image patches as tokens
+<br/><font color=#800000>multi-scale pathology feature extraction</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Course notes: foundation models in biomedical imaging</li>
-  <li>References: SAM, CLIP, domain pretraining</li>
+  <li>[F] Chap. 4.9-4.10</li>
+  <li>Paper: <a href="https://arxiv.org/abs/2010.11929">ViT</a>, <a href="https://arxiv.org/abs/2103.14030">Swin Transformer</a></li>
 </ul>
 </td>
 <td>ps3 out (foundation models)</td>
 </tr>
 <tr>
 
+<tr><td align=center colspan="5"><h3><font color=#800000>Theme 3: Foundation Models</font></h3></td></tr>
+<td rowspan=4 style="vertical-align:middle;text-align:center;">FM Basics<br />[Week 11]</td>
 <td>Wed, Mar. 25</td>
 <td class="topic">
-Lec. 27: Self-Supervised Vision
+Lec. 26: Foundation Models Overview
 <div class="subtopic">
-contrastive + masked modeling (MAE/DINO ideas)
+pretrain-then-adapt paradigm; scaling; benchmarks
+<br/><font color=#800000>biomedical benchmarks (MedMNIST, CheXpert)</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Masked modeling / contrastive learning (MAE/DINO) (TBA)</li>
+  <li>Paper: <a href="https://arxiv.org/abs/2108.07258">Foundation models survey</a></li>
+  <li>References: scaling laws, pretraining data, benchmarks</li>
 </ul>
 </td>
 <td><font color=#800000>lab8 due</font></td>
@@ -620,65 +643,69 @@ contrastive + masked modeling (MAE/DINO ideas)
 
 <td>Fri, Mar. 27</td>
 <td class="topic">
-Lec. 28: Parameter-Efficient Tuning (PEFT)
+Lec. 27: Self-Supervised Learning
 <div class="subtopic">
-adapters/LoRA; domain adaptation
+contrastive learning, masked modeling (MAE, DINO)
+<br/><font color=#800000>pretraining on unlabeled pathology/radiology data</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>PEFT: adapters / LoRA (TBA)</li>
+  <li>Paper: <a href="https://arxiv.org/abs/2111.06377">MAE</a>, <a href="https://arxiv.org/abs/2104.14294">DINO</a></li>
 </ul>
 </td>
 <td></td>
 </tr>
 <tr>
-<td rowspan=2 style="vertical-align:middle;text-align:center;">Promptable + Domain FMs<br />[Week 12]</td>
 <td>Mon, Mar. 30</td>
 <td class="topic">
-Lec. 29: Promptable Segmentation
+Lec. 28: Parameter-Efficient Tuning (PEFT)
 <div class="subtopic">
-SAM-style interaction; labeling workflows
+adapters, LoRA; efficient domain adaptation
+<br/><font color=#800000>adapting foundation models to new organs/stains</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Promptable segmentation (SAM / MedSAM) (TBA)</li>
+  <li>Paper: <a href="https://arxiv.org/abs/2106.09685">LoRA</a></li>
+  <li>Tutorial: <a href="https://huggingface.co/docs/peft">HuggingFace PEFT</a></li>
 </ul>
 </td>
+
 <td></td>
 </tr>
 <tr>
 
 <td>Wed, Apr. 1</td>
 <td class="topic">
-Lec. 30: Biomedical Vision FMs + Retrieval
+Lec. 29: Promptable Segmentation
 <div class="subtopic">
-embeddings, nearest neighbors; gigapixel issues
+SAM-style prompting; interactive labeling
+<br/><font color=#800000>click-to-segment tumors with MedSAM</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Embeddings + retrieval; evaluation under domain shift (TBA)</li>
+  <li>Paper: <a href="https://arxiv.org/abs/2304.02643">SAM</a>, <a href="https://arxiv.org/abs/2307.01009">MedSAM</a></li>
 </ul>
 </td>
 <td><font color=#800000>lab9 due</font></td>
 </tr>
 <tr><td align=center colspan="5">No Class (Good Friday Apr. 3) / No Class (Easter Monday Apr. 6)</td></tr>
 <tr>
-<td rowspan=2 style="vertical-align:middle;text-align:center;">Multimodal + Generative FMs<br />[Week 13]</td>
+<td rowspan=2 style="vertical-align:middle;text-align:center;">Multimodal FMs<br />[Week 13]</td>
 <td>Wed, Apr. 8</td>
 <td class="topic">
-Lec. 31: Vision-Language Models in Biomed
+Lec. 30: Multimodal Foundation Models
 <div class="subtopic">
-image+text alignment; report/Q&A; PathChat pattern
+CLIP, image-text alignment; vision-language models
+<br/><font color=#800000>zero-shot medical image retrieval</font>
 </div>
 </td>
 <td>
 <ul class="materials">
+  <li>Paper: <a href="https://arxiv.org/abs/2103.00020">CLIP</a>, <a href="https://arxiv.org/abs/2304.08485">LLaVA</a></li>
   <li>GenAI reference: <a href="https://bc-cv.github.io/csci3388/f25/">CSCI 3388 materials</a></li>
-  <li>Product pattern: retrieval + citation + image evidence</li>
-  <li>Example: <a href="https://www.modella.ai/pathchat">PathChat</a></li>
 </ul>
 </td>
 <td><font color=#800000>ps3 due</font></td>
@@ -687,15 +714,16 @@ image+text alignment; report/Q&A; PathChat pattern
 
 <td>Fri, Apr. 10</td>
 <td class="topic">
-Lec. 32: Generative Models for Imaging
+Lec. 31: Multimodal FMs in Biomedicine
 <div class="subtopic">
-diffusion for augmentation/inpainting; synthetic data
+PathChat, BiomedCLIP; report generation, visual Q&A
+<br/><font color=#800000>pathology Q&A and radiology report drafting</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Diffusion overview; synthetic data pitfalls</li>
-  <li>Reference: MIT 6.S978 generative models reading list</li>
+  <li>Paper: <a href="https://arxiv.org/abs/2312.07814">BiomedCLIP</a></li>
+  <li>Example: <a href="https://www.modella.ai/pathchat">PathChat</a></li>
 </ul>
 </td>
 <td></td>
@@ -705,14 +733,16 @@ diffusion for augmentation/inpainting; synthetic data
 <td rowspan=3 style="vertical-align:middle;text-align:center;">LLM Tooling + RAG<br />[Week 14]</td>
 <td>Mon, Apr. 13</td>
 <td class="topic">
-Lec. 33: LLM Tooling for Imaging Products
+Lec. 32: LLM APIs & Prompt Engineering
 <div class="subtopic">
-prompting, structured outputs, tool calling
+API calls, prompt design, structured outputs, tool calling
+<br/><font color=#800000>extracting structured findings from reports</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li><a href="https://bc-cv.github.io/csci3388/f25/">CSCI 3388: GenAI</a> (LLM tooling, RAG, eval)</li>
+  <li>Coding: <a href="https://platform.openai.com/docs/quickstart">OpenAI API quickstart</a></li>
+  <li>Reference: <a href="https://bc-cv.github.io/csci3388/f25/">CSCI 3388: GenAI</a></li>
 </ul>
 </td>
 <td>ps4 out (agentic systems)</td>
@@ -721,15 +751,16 @@ prompting, structured outputs, tool calling
 
 <td>Wed, Apr. 15</td>
 <td class="topic">
-Lec. 34: RAG + Evaluation Harness
+Lec. 33: RAG & Document Search
 <div class="subtopic">
-retrieval, citations; testing prompts/agents
+embeddings, vector search, retrieval-augmented generation
+<br/><font color=#800000>searching medical literature by case similarity</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>RAG patterns + eval harness (TBA)</li>
-  <li><a href="https://themodernsoftware.dev">Modern software engineering</a> patterns</li>
+  <li>Tutorial: <a href="https://docs.llamaindex.ai/en/stable/">LlamaIndex</a></li>
+  <li>Concept: embeddings, chunking, vector databases</li>
 </ul>
 </td>
 <td><font color=#800000>lab10 due</font></td>
@@ -738,14 +769,16 @@ retrieval, citations; testing prompts/agents
 
 <td>Fri, Apr. 17</td>
 <td class="topic">
-Lec. 35: Agents I
+Lec. 34: Coding Agents for Data Analysis
 <div class="subtopic">
-planner/executor; tool use; guardrails
+code generation, tool use, iterative analysis pipelines
+<br/><font color=#800000>automated cell counting and statistics</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Agent design patterns: tools, memory, planning (TBA)</li>
+  <li>Tutorial: <a href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use">Claude tool use</a></li>
+  <li>Example: automated image analysis notebooks</li>
 </ul>
 </td>
 <td></td>
@@ -755,14 +788,16 @@ planner/executor; tool use; guardrails
 <td rowspan=2 style="vertical-align:middle;text-align:center;">Agentic Systems<br />[Week 15]</td>
 <td>Tue, Apr. 21 <br />(Mon class)</td>
 <td class="topic">
-Lec. 36: Agents II (Workflow Automation)
+Lec. 35: Agentic Radiology/Pathology Workflows
 <div class="subtopic">
-automate experiments; reports; ablations
+automated reading, report drafting, quality checks
+<br/><font color=#800000>end-to-end slide screening → diagnosis pipeline</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Agentic workflow: run → evaluate → report → iterate (TBA)</li>
+  <li>Case study: automated radiology report drafting</li>
+  <li>Case study: pathology slide screening pipeline</li>
 </ul>
 </td>
 <td></td>
@@ -771,15 +806,16 @@ automate experiments; reports; ablations
 
 <td>Wed, Apr. 22</td>
 <td class="topic">
-Lec. 37: Productization & Deployment
+Lec. 36: Deploying a Biomedical AI Product
 <div class="subtopic">
-latency, monitoring, privacy; demo clinic
+latency, monitoring, HIPAA/privacy; live demo practice
+<br/><font color=#800000>deploying a clinical decision-support tool</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li><a href="https://themodernsoftware.dev">themodernsoftware.dev</a> (reliability + deployment)</li>
-  <li>Monitoring + privacy considerations (TBA)</li>
+  <li>Reference: <a href="https://themodernsoftware.dev">themodernsoftware.dev</a></li>
+  <li>Topics: FDA/CE approval, HIPAA, model monitoring</li>
 </ul>
 </td>
 <td><font color=#800000>ps4 due</font><br/><font color=#800000>fp slide due</font></td>
