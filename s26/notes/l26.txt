@@ -1,0 +1,46 @@
+**Lecture 26: Foundation Models Overview**
+
+**Total Time: 50 minutes**
+
+**[5 min] 0. Housekeeping**
+- **Recap**: Theme 2 wrap-up (Transformer Models in Vision: ViT, DETR, MaskFormer).
+- **Transition**: From supervised deep learning to the foundation model paradigm.
+- **Action**: lab8 due; ps3 out (foundation models).
+
+**[10 min] 1. What Are Foundation Models?**
+- **Core Concept**: Large-scale models pretrained on broad data, then adapted to downstream tasks.
+- **The Pretrain-Then-Adapt Paradigm**:
+  - Pretraining: Learn general representations from massive (often unlabeled) datasets.
+  - Adaptation: Fine-tune or prompt for specific tasks (classification, segmentation, etc.).
+- **Why Now?**: Convergence of data scale, compute (GPUs/TPUs), and algorithmic advances.
+- **Key Distinction**: Task-specific models vs. one model adapted to many tasks.
+
+**[10 min] 2. Scaling Laws & Emergent Capabilities**
+- **Scaling Dimensions**: Model size (parameters), dataset size, compute budget.
+- **Empirical Scaling Laws**: Predictable performance gains with scale (Kaplan et al.).
+- **Emergent Behaviors**: Capabilities that appear only at sufficient scale (e.g., in-context learning).
+- **Trade-offs**: Compute cost, carbon footprint, diminishing returns at extreme scale.
+
+**[10 min] 3. Pretraining Data & Strategies**
+- **Data Sources**: Web-crawled text/images, curated datasets, domain-specific corpora.
+- **Pretraining Objectives**:
+  - Language: Masked language modeling (BERT), autoregressive (GPT).
+  - Vision: Masked image modeling (MAE), contrastive learning (CLIP).
+  - Multimodal: Image-text alignment, vision-language pretraining.
+- **Data Quality vs. Quantity**: Filtering, deduplication, and curation matter.
+
+**[10 min] 4. Benchmarks & Evaluation**
+- **General Vision Benchmarks**: ImageNet, COCO, ADE20K.
+- **Biomedical Benchmarks**:
+  - MedMNIST: Standardized collection of 2D/3D biomedical image classification tasks.
+  - CheXpert: Large-scale chest X-ray dataset for pathology detection.
+- **Evaluation Paradigms**: Zero-shot, few-shot, linear probing, full fine-tuning.
+- **Why Benchmarks Matter**: Reproducibility, fair comparison, tracking progress.
+
+**[5 min] 5. Looking Ahead: Theme 3 Roadmap**
+- **Next Lectures**:
+  - Lec. 27: Self-Supervised Learning (contrastive learning, MAE, DINO).
+  - Lec. 28: Parameter-Efficient Tuning (adapters, LoRA).
+  - Lec. 29: Promptable Segmentation (SAM, MedSAM).
+- **Reading**: Foundation models survey (Bommasani et al., arXiv:2108.07258).
+- **Big Picture**: How foundation models are reshaping biomedical image analysis.
