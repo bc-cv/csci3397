@@ -1,0 +1,52 @@
+**Lecture 28: Parameter-Efficient Tuning (PEFT)**
+
+**Total Time: 50 minutes**
+
+**[5 min] 0. Housekeeping**
+- **Recap**: Lec. 27 — self-supervised pretraining (MAE, DINO) gives us powerful foundation models.
+- **The Problem**: These models have hundreds of millions (or billions) of parameters. How do we adapt them to new tasks without retraining everything?
+- **Reading**: LoRA paper (Hu et al., arXiv:2106.09685); HuggingFace PEFT tutorial.
+
+**[10 min] 1. The Adaptation Problem**
+- **Full Fine-Tuning**: Update all parameters on downstream data.
+  - Pros: Maximum expressivity, well-understood.
+  - Cons: Expensive (GPU memory, storage); one copy of the model per task; risk of catastrophic forgetting.
+- **Linear Probing**: Freeze the backbone, train only a classification head.
+  - Pros: Cheap, fast.
+  - Cons: Limited capacity; cannot adapt internal representations.
+- **The Gap**: We want something between these two extremes — update a small fraction of parameters while achieving near-full-fine-tuning performance.
+
+**[10 min] 2. Adapter Modules**
+- **Key Idea**: Insert small trainable bottleneck layers into a frozen pretrained network.
+- **Architecture**: Input → down-projection (d → r) → nonlinearity → up-projection (r → d) → residual connection.
+  - r << d, so very few new parameters (typically <5% of the original model).
+- **Where to Insert**: After attention and/or FFN sub-layers in each transformer block.
+- **Training**: Only adapter parameters are updated; backbone stays frozen.
+- **Advantages**: Task-specific adapters are lightweight; multiple tasks share the same backbone.
+
+**[10 min] 3. LoRA (Low-Rank Adaptation)**
+- **Key Idea**: Instead of adding new layers, reparameterize existing weight updates as low-rank matrices.
+- **Formulation**: W' = W + BA, where W is frozen (d × d), B is (d × r), A is (r × d), and r << d.
+  - Only B and A are trained; W is never modified.
+  - At inference: merge BA into W — zero additional latency.
+- **Why Low-Rank Works**: Weight updates during fine-tuning empirically have low intrinsic rank.
+- **Hyperparameters**: Rank r (typical: 4–64), which layers to adapt (query/value projections work well).
+- **Comparison to Adapters**: No added inference cost; even fewer parameters; easy to swap task-specific LoRA weights.
+
+**[10 min] 4. Biomedical Application: Adapting FMs to New Organs/Stains**
+- **Scenario**: A ViT pretrained on ImageNet or large pathology datasets (e.g., via DINO). New task: classify rare tissue stains or segment a new organ.
+- **Why PEFT Fits**:
+  - Limited labeled biomedical data — full fine-tuning overfits.
+  - Hospital compute budgets are small — cannot retrain billion-parameter models.
+  - Multiple downstream tasks (different organs, stains, modalities) share one frozen backbone.
+- **Practical Workflow** (HuggingFace PEFT):
+  1. Load pretrained model (e.g., from timm or HuggingFace Hub).
+  2. Attach LoRA adapters with a few lines of code.
+  3. Train on domain-specific data; save only the adapter weights (~MBs vs. GBs).
+  4. Swap adapters at inference for different tasks.
+- **Results**: LoRA often matches or approaches full fine-tuning on biomedical benchmarks with <1% of trainable parameters.
+
+**[5 min] 5. Broader PEFT Landscape & Wrap-Up**
+- **Other Methods**: Prefix tuning (learnable prompt tokens), BitFit (bias-only tuning), (IA)³ (learned rescaling).
+- **How to Choose**: LoRA is the current default; adapters if you need modularity; prefix tuning for generative tasks.
+- **Looking Ahead**: Lec. 29 — Promptable Segmentation (SAM, MedSAM): a different kind of adaptation where the user provides spatial prompts at inference time.

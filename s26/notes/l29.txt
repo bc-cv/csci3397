@@ -1,0 +1,68 @@
+**Lecture 29: Promptable Segmentation**
+
+**Total Time: 50 minutes**
+
+**[5 min] 0. Housekeeping**
+- **Recap**: Lec. 28 — PEFT adapts foundation models by updating few parameters (adapters, LoRA).
+- **Today's Shift**: Instead of adapting the model's weights, we keep the model fixed and adapt the *input* — prompting.
+- **Action**: lab9 due.
+- **Reading**: SAM (Kirillov et al., arXiv:2304.02643); MedSAM (Ma et al., arXiv:2307.01009).
+
+**[10 min] 1. Prompt Engineering: From Text to Images**
+- **Text Prompting Recap**:
+  - LLMs (GPT, Claude): natural-language instructions steer a frozen model.
+  - Key ideas: zero-shot, few-shot (in-context examples), chain-of-thought.
+  - The model doesn't change — only the input changes.
+- **Visual Prompting — The Same Idea for Images**:
+  - Instead of text instructions, provide spatial cues: points, bounding boxes, masks, or text.
+  - The model interprets these cues to produce task-specific outputs (e.g., segmentation masks).
+- **Why This Matters**: Eliminates per-task fine-tuning; a single model handles any object via different prompts.
+- **Analogy**: Text prompt = "segment the tumor" vs. Visual prompt = a click on the tumor.
+
+**[15 min] 2. SAM: Segment Anything Model**
+- **Goal**: Build one model that can segment *any* object in *any* image, guided by user prompts.
+- **Architecture (Three Components)**:
+  1. **Image Encoder**: ViT-H (pretrained, heavy). Runs once per image → image embeddings.
+  2. **Prompt Encoder**: Encodes user prompts into tokens.
+     - Sparse prompts: points (foreground/background) and bounding boxes → positional embeddings.
+     - Dense prompts: rough masks → convolution + downsampling.
+     - Text prompts: CLIP text embeddings (experimental).
+  3. **Mask Decoder**: Lightweight transformer decoder. Combines image embeddings + prompt tokens → output masks + confidence scores.
+     - Outputs multiple masks (3 levels of granularity: part / object / whole) to handle ambiguity.
+- **Design Principles**:
+  - Decouple heavy image encoding from lightweight prompt-conditioned decoding.
+  - Real-time interaction: image encoder runs once; mask decoder runs per prompt in ~50ms.
+- **Training: The SA-1B Data Engine**:
+  - Iterative loop: (1) Annotators use SAM to label → (2) retrain SAM on new labels → (3) repeat.
+  - Result: 1B masks on 11M images — the largest segmentation dataset ever.
+  - Three phases: assisted-manual → semi-automatic → fully automatic.
+
+**[10 min] 3. MedSAM & Biomedical Variants**
+- **The Domain Gap**: SAM trained on natural images struggles with medical images (low contrast, ambiguous boundaries, 3D volumes).
+- **MedSAM**:
+  - Fine-tunes SAM on 1.5M medical image-mask pairs across 10+ modalities (CT, MRI, X-ray, ultrasound, endoscopy, microscopy).
+  - Prompt mode: bounding box → segmentation mask.
+  - Key result: One model generalizes across organs, modalities, and pathologies.
+- **Other Variants**:
+  - **SAM-Med2D**: Adds adapter layers (PEFT from Lec. 28!) to SAM for 2D medical images.
+  - **SAM-Med3D**: Extends SAM to volumetric (3D) data with a 3D ViT encoder.
+  - **SAM 2**: Meta's follow-up; extends to video with memory-based tracking across frames.
+- **Practical Takeaway**: Don't retrain from scratch — start from SAM, adapt with domain data using PEFT or full fine-tuning on curated medical datasets.
+
+**[5 min] 4. How to Use SAM in Practice**
+- **Interactive Labeling Workflow**:
+  1. Load image into a SAM-powered tool (e.g., Napari + SAM plugin, Label Studio).
+  2. Click a foreground point → instant mask. Add points or a bounding box to refine.
+  3. Export masks for downstream training (e.g., U-Net fine-tuning).
+- **Programmatic Use** (Python):
+  - `SamPredictor`: set image once, then query with points/boxes for each object.
+  - `SamAutomaticMaskGenerator`: grid of point prompts → segment everything in the image.
+- **When to Use What**:
+  - Few objects, high accuracy needed → interactive point/box prompts.
+  - Full-image annotation → automatic mask generation + manual correction.
+  - Medical domain → MedSAM or fine-tuned variant for better out-of-the-box performance.
+
+**[5 min] 5. Wrap-Up & Looking Ahead**
+- **Key Takeaway**: Prompting is a universal interface — text for LLMs, spatial cues for vision models. SAM demonstrates that a single promptable model can replace thousands of task-specific segmentation models.
+- **Connection to PEFT**: SAM variants (SAM-Med2D) often use adapters/LoRA to bridge the domain gap — the techniques from Lec. 28 directly apply.
+- **Next**: Lec. 30 — Multimodal Foundation Models (CLIP, LLaVA). Text and image prompts converge: what happens when one model understands both?
