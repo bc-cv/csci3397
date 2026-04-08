@@ -1,0 +1,130 @@
+**Lecture 33: Tool Use & the Core Agent Loop**
+
+**Total Time: 50 minutes**
+
+**[5 min] 0. Housekeeping**
+- **Recap**: Lec. 32 — LLM APIs let us send messages and get text back. The agency spectrum shows levels of LLM control.
+- **Today's Shift**: We go from ★☆☆ (text in, text out) to ★★☆ (LLM chooses and calls functions). This is the core of what makes an agent.
+- **Reading**: Anthropic tool use docs; nano-claude-code `agent.py` (179 lines) and `tool_registry.py` (98 lines).
+
+**[12 min] 1. What Is Tool Use?**
+- **The Idea**: Instead of just generating text, the LLM can request to call functions.
+- **How It Works** (3-step cycle):
+  1. You send the LLM a list of available tools (as JSON schemas) + a user message.
+  2. The LLM responds with a tool call: tool name + arguments.
+  3. You execute the function locally and send the result back to the LLM.
+  4. The LLM sees the result and either calls another tool or responds with text.
+- **Tool Schema** (JSON Schema format):
+  ```python
+  tools = [{
+      "name": "count_cells",
+      "description": "Count cells in a microscopy image using watershed segmentation.",
+      "input_schema": {
+          "type": "object",
+          "properties": {
+              "image_path": {"type": "string", "description": "Path to the microscopy image"},
+              "threshold": {"type": "number", "description": "Detection threshold (0-1)"}
+          },
+          "required": ["image_path"]
+      }
+  }]
+  ```
+  - `name`: how the LLM refers to the tool.
+  - `description`: the LLM reads this to decide when to use the tool — make it specific.
+  - `input_schema`: JSON Schema defining the parameters. The LLM generates valid arguments.
+- **API Call with Tools** (Anthropic):
+  ```python
+  response = client.messages.create(
+      model="claude-sonnet-4-6-20250514",
+      max_tokens=1024,
+      tools=tools,
+      messages=[{"role": "user", "content": "Count the cells in slide_042.png"}]
+  )
+  # response.stop_reason == "tool_use"
+  # response.content includes a tool_use block with name and input
+  ```
+- **The LLM Doesn't Execute Anything**: It only *requests* a tool call. Your code decides whether to execute it. This is the foundation of safety.
+
+**[13 min] 2. The Agent Loop — ReAct Pattern**
+- **ReAct** = Reasoning + Acting (Yao et al., 2022). The LLM alternates between:
+  - **Think**: reason about what to do next.
+  - **Act**: call a tool.
+  - **Observe**: see the tool result.
+  - Repeat until the task is done.
+- **The Core Loop** (nano-claude-code's `agent.py`, simplified):
+  ```python
+  def agent_loop(user_message, tools, system_prompt):
+      messages = [{"role": "user", "content": user_message}]
+
+      while True:
+          # Call the LLM
+          response = call_llm(messages, tools, system_prompt)
+
+          # Append assistant's response
+          messages.append({"role": "assistant", "content": response.content})
+
+          # If no tool calls, we're done
+          if response.stop_reason != "tool_use":
+              return response.text
+
+          # Execute each tool call
+          for tool_call in response.tool_calls:
+              result = execute_tool(tool_call.name, tool_call.input)
+              messages.append({
+                  "role": "user",  # tool results go back as user messages
+                  "content": [{"type": "tool_result",
+                               "tool_use_id": tool_call.id,
+                               "content": result}]
+              })
+          # Loop: LLM sees tool results and decides next action
+  ```
+- **Key Design Decisions**:
+  - **Loop termination**: The LLM decides when to stop (stop_reason != "tool_use"). It could also be a max-iterations guard.
+  - **Message accumulation**: Every action and observation is appended to messages — the LLM sees its full history.
+  - **Multiple tool calls**: The LLM can request several tools in one turn (parallel execution).
+- **nano-claude-code's `agent.py`**: 179 lines. Uses Python generators (`yield`) to emit typed events:
+  - `TextChunk` — streaming text for display.
+  - `ToolStart` / `ToolEnd` — tool execution lifecycle.
+  - `PermissionRequest` — pause for user approval.
+  - `TurnDone` — end of one API round with token counts.
+  - This decouples the loop logic from the UI — the same loop can power a CLI, web app, or notebook.
+
+**[10 min] 3. The Tool Registry — Plugin Architecture**
+- **Problem**: Hardcoding tools in the agent loop doesn't scale. We need to add/remove tools dynamically.
+- **Solution**: A tool registry (nano-claude-code's `tool_registry.py`, 98 lines):
+  ```python
+  @dataclass
+  class ToolDef:
+      name: str              # "count_cells"
+      schema: dict           # JSON schema sent to API
+      func: Callable         # (params, config) -> result string
+      read_only: bool        # True = safe, auto-approve
+      concurrent_safe: bool  # True = can run in parallel
+  ```
+- **Registry Operations**:
+  - `register_tool(tool_def)` — add a new tool at runtime.
+  - `get_tool(name)` — look up by name.
+  - `get_tool_schemas()` — export all schemas for the API call.
+  - `execute_tool(name, params)` — dispatch + output truncation (if result > 32K chars, keep first 50% + last 25%).
+- **Why This Matters**:
+  - Open/closed principle: add tools without modifying the agent loop.
+  - Permissions: `read_only` flag enables automatic approval for safe tools.
+  - Extensibility: plugins, MCP servers, and user-defined tools all register through the same interface.
+- **Code Agents vs. JSON Tool Calling** (smolagents insight):
+  - Standard approach: LLM outputs JSON → parse → execute function.
+  - Code agent approach: LLM writes Python code that calls tools directly.
+  - Advantages of code agents: composability (nest calls, define functions), object management (store results in variables), more natural for LLMs (trained on code).
+  - Trade-off: code agents need sandboxing; JSON is easier to validate.
+
+**[5 min] 4. Demo: Biomedical Agent with Custom Tools**
+- Walk through a Colab notebook:
+  1. Define 3 tools: `count_cells(image_path)`, `measure_area(image_path, label)`, `compute_statistics(values)`.
+  2. Register them with the tool registry.
+  3. Run the agent loop with: "Analyze slide_042.png — count all cells, measure the area of the largest cluster, and compute summary statistics."
+  4. Watch the agent: Think → call count_cells → observe "found 247 cells" → call measure_area → observe "1,340 μm²" → call compute_statistics → final text report.
+- Highlight: the agent decided the order of tool calls on its own.
+
+**[5 min] 5. Wrap-Up & Looking Ahead**
+- **Key Takeaway**: Tool use + the agent loop is the core of every coding agent. The LLM *reasons* about what to do, *calls* tools, *observes* results, and *loops*. The entire loop is ~30 lines of Python.
+- **What We Built Today**: `tool_registry.py` (plugin system) + `agent.py` (the loop) — the brain of nano-claude-code.
+- **Next**: Lec. 34 — We add real tools: file I/O (Read, Write, Edit), Bash execution, and context management. The agent will be able to write and run its own analysis scripts.

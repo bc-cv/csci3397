@@ -1,0 +1,110 @@
+**Lecture 30: Multimodal Foundation Models**
+
+**Total Time: 50 minutes**
+
+**[3 min] 0. Housekeeping**
+- **Recap**: Lec. 29 — promptable segmentation (SAM). Visual prompts steer a frozen vision model.
+- **Today**: A single model that understands *both* text and images. Multimodal foundation models (MFMs).
+- **Action**: ps3 due.
+- **Reading**: CLIP (Radford et al., arXiv:2103.00020); LLaVA (Liu et al., arXiv:2304.08485).
+
+**[15 min] 1. Design Spaces of Multimodal Foundation Models**
+
+*Before diving into specific models, let's understand the design choices that define every MFM.*
+
+**1.1 Input / Modalities** — *what goes in?*
+- Image-Text: CLIP, BLIP, Flamingo — most common; cross-modal retrieval, captioning, VQA.
+- Image-Text-Action: Robotics, instruction following — adds temporal/interactive modalities.
+- Video + Text: Video-LLaMA, VideoChat — captures dynamics and sequence.
+- Audio + Text / Speech: Whisper, AudioCLIP — multimodal speech understanding.
+- Point Clouds / 3D + Text: Lidar + instructions, 3D scene description (robotics, AR/VR).
+- Multimodal-ALL: Large MFMs with >2 modalities (e.g., Kosmos-2, Gato).
+
+**1.2 Method / Architecture** — *how are modalities combined?*
+- **Separate Encoders + Fusion**: Each modality has its own encoder; fused via cross-attention or concatenation. (Flamingo, BLIP-2)
+- **Shared Encoder (Early Fusion)**: Modalities mapped into a shared embedding space at the encoder level. (CLIP, ALIGN)
+- **Encoder-Decoder / Seq2Seq**: Encode all modalities, then autoregressively decode outputs. (LLaVA, VideoChat)
+- **Cross-Attention Transformers**: One modality is the query, another is key/value. (Flamingo, Kosmos-2)
+- **Mixture-of-Modality Experts (MoME)**: Experts specialize per modality; gating fuses outputs. (Gato)
+
+**1.3 Output / Task** — *what comes out?*
+- Single- or multi-task: text generation, image generation, segmentation, classification, control/action.
+- Many MFMs are *promptable* (like LLMs): text query → image/video/3D reasoning; image → caption → answer.
+
+**1.4 Pretraining / Supervision Strategy** — *how is it trained?*
+- Self-supervised: masked modeling, contrastive alignment.
+- Supervised: paired datasets (image-caption pairs, VQA datasets).
+- Often a mix: contrastive + generative + retrieval objectives.
+
+**1.5 Prompt / Instruction Modality** — *how do users interact?*
+- Text → image/video grounding.
+- Text + image → answer (visual Q&A).
+- Multimodal instructions for robotic tasks.
+
+**Intuition**: Designing an MFM = choose modalities → choose encoders → choose fusion → choose output → choose pretraining objective. Then scale up data and compute.
+
+**Today's Focus**: Two image-text MFMs that bracket the design space:
+- **CLIP** — discriminative, dual-encoder, contrastive pretraining.
+- **LLaVA** — generative, encoder + LLM decoder, instruction-tuned.
+
+---
+
+**[12 min] 2. CLIP: A Discriminative Image-Text Model**
+- **Goal**: Learn a *shared embedding space* where matching images and texts are close.
+- **Architecture (Two Encoders, No Fusion)**:
+  - Image encoder: ViT or ResNet → image embedding.
+  - Text encoder: Transformer → text embedding.
+  - Both project to the same dimension; cosine similarity = alignment score.
+- **Training Objective: Symmetric Contrastive Loss**:
+  - Batch of N (image, text) pairs.
+  - Compute N×N similarity matrix between all images and all texts.
+  - Maximize diagonal (matched pairs); minimize off-diagonal (unmatched pairs).
+  - Symmetric cross-entropy over rows and columns.
+- **Training Data**: 400M image-text pairs from the web (WebImageText/WIT).
+- **Zero-Shot Inference**:
+  - Encode candidate class names as text prompts ("a photo of a {class}").
+  - Encode the input image.
+  - Pick the class whose text embedding is closest.
+- **Results**: Matches a fully-supervised ResNet-50 on ImageNet *without* training on ImageNet labels.
+- **Why It Works**: Natural language is a far richer supervision signal than fixed class labels.
+- **Where It Fits in the Design Space**: Image-Text input · Shared embedding (early fusion) · Discriminative output · Contrastive pretraining.
+
+**[12 min] 3. LLaVA: A Generative Image-Text Model**
+- **The Limit of CLIP**: It can match images to texts, but cannot *generate* text or hold a conversation.
+- **LLaVA: Large Language and Vision Assistant**:
+  - Combines a pretrained vision encoder (CLIP ViT) with a pretrained LLM (Vicuna/LLaMA).
+  - A lightweight projection layer maps image features into the LLM's token space.
+  - The LLM "sees" images as a sequence of visual tokens prepended to the text input.
+- **Two-Stage Training**:
+  1. **Feature alignment**: Train only the projector on image-caption pairs (encoder + LLM frozen).
+  2. **Instruction tuning**: Fine-tune on multimodal instruction-following data (visual Q&A, reasoning).
+- **Capabilities**:
+  - Describe an image in natural language.
+  - Answer questions about image content.
+  - Visual reasoning ("why is this funny?", "what should I do next?").
+- **Key Insight**: A frozen LLM + a small projector inherits language reasoning for visual inputs — cheap to train.
+- **Where It Fits in the Design Space**: Image-Text input · Separate encoders + decoder fusion · Generative (text) output · Supervised instruction tuning.
+
+**CLIP vs. LLaVA at a Glance**:
+- CLIP: 2 encoders, contrastive, discriminative, retrieval/classification.
+- LLaVA: encoder + projector + LLM, generative, conversation/reasoning.
+- Same modalities, very different design choices → very different capabilities.
+
+---
+
+**[6 min] 4. Biomedical Application: Zero-Shot Medical Image Retrieval**
+- **The Use Case**: Radiologists describe a finding in text; the system retrieves similar past cases.
+- **How It Works (CLIP-style)**:
+  - Encode all images in a hospital archive into the shared embedding space (one-time cost).
+  - Encode the radiologist's text query.
+  - Return the top-k most similar images by cosine similarity.
+- **Why It's Powerful**:
+  - No labels required — works on unannotated archives.
+  - Open-vocabulary — query with any clinical phrase, not a fixed taxonomy.
+  - Bidirectional — retrieve images by text *or* texts by image.
+- **The Catch**: General-purpose CLIP underperforms on medical images (domain gap, specialized vocabulary).
+- **Solution**: Domain-adapted variants like BiomedCLIP (next lecture).
+
+**[2 min] 5. Wrap-Up & Looking Ahead**
+- **Key Takeaway**: Every MFM is a point in a 5-dimensional design space (modalities × architecture × output × pretraining × prompting). CLIP and LLaVA show two very different points — discriminative vs. generative — built from the same image-text ingredients.
+- **Next**: Lec. 31 — Multimodal FMs in Biomedicine. PathChat, BiomedCLIP, report generation, pathology Q&A.

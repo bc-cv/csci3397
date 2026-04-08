@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 34: Coding Agent with File I/O &amp; Bash</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --maroon: #800000;
+  --maroon-light: #a03030;
+  --text: #333;
+  --bg: #fff;
+  --code-bg: #f5f5f5;
+  --code-border: #e0e0e0;
+  --slide-w: 1280;
+  --slide-h: 720;
+}
+
+html, body { height: 100%; overflow: hidden; background: #000; }
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex; align-items: center; justify-content: center;
+}
+
+#deck {
+  position: relative;
+  width: 100vw; height: 56.25vw;          /* 16:9 */
+  max-height: 100vh; max-width: 177.78vh;  /* clamp to viewport */
+  overflow: hidden; background: var(--bg);
+}
+
+/* Progress bar */
+#progress {
+  position: absolute; top: 0; left: 0; height: 4px;
+  background: var(--maroon); z-index: 100; transition: width .3s ease;
+}
+
+/* Slide counter */
+#counter {
+  position: absolute; bottom: 18px; right: 28px; z-index: 100;
+  font-size: 0.85em; color: #999; font-variant-numeric: tabular-nums;
+}
+
+/* Generic slide */
+.slide {
+  position: absolute; inset: 0; padding: 60px 72px;
+  display: none; flex-direction: column;
+  font-size: 1.35em; line-height: 1.55; color: var(--text);
+}
+.slide.active { display: flex; }
+
+/* Title slide overrides */
+.slide.title-slide {
+  background: var(--maroon); color: #fff;
+  align-items: center; justify-content: center; text-align: center;
+  padding: 60px 100px;
+}
+.slide.title-slide h1 { font-size: 2.1em; margin-bottom: 0.25em; font-weight: 700; color: #fff; }
+.slide.title-slide h2 { font-size: 1.15em; font-weight: 400; opacity: 0.85; margin-bottom: 0.6em; color: #fff; }
+.slide.title-slide .subtitle { font-size: 0.75em; opacity: 0.7; margin-top: 0.6em; color: #fff; }
+.slide.title-slide .course { font-size: 0.65em; opacity: 0.55; margin-top: 1.2em; color: #fff; }
+
+/* Section divider */
+.slide.section-slide {
+  background: var(--maroon); color: #fff;
+  align-items: center; justify-content: center; text-align: center;
+}
+.slide.section-slide h1 { font-size: 2.2em; font-weight: 700; color: #fff; }
+.slide.section-slide .section-num { font-size: 0.7em; opacity: 0.55; margin-bottom: 0.5em; color: #fff; }
+
+/* Content slides */
+.slide h1 { font-size: 1.45em; color: var(--maroon); margin-bottom: 0.55em; font-weight: 700; }
+.slide h2 { font-size: 1.1em; color: var(--maroon); margin-bottom: 0.4em; font-weight: 600; }
+.slide ul { margin-left: 1.3em; margin-bottom: 0.3em; }
+.slide li { margin-bottom: 0.3em; }
+.slide li li { font-size: 0.92em; }
+.slide p { margin-bottom: 0.5em; }
+
+/* Code blocks */
+.code-block {
+  background: var(--code-bg); border: 1px solid var(--code-border);
+  border-radius: 8px; padding: 16px 20px; font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+  font-size: 0.68em; line-height: 1.55; overflow-x: auto; white-space: pre; margin: 0.5em 0;
+  color: #1a1a1a;
+}
+.code-block .kw { color: #7b2d8b; font-weight: 600; }
+.code-block .str { color: #1a7f37; }
+.code-block .cmt { color: #8a8a8a; font-style: italic; }
+.code-block .fn { color: #0550ae; }
+.code-block .num { color: #cf4e16; }
+
+/* Inline code */
+code {
+  background: var(--code-bg); border: 1px solid var(--code-border);
+  border-radius: 4px; padding: 1px 6px;
+  font-family: "SF Mono", "Fira Code", Consolas, monospace;
+  font-size: 0.85em; color: #1a1a1a;
+}
+
+/* Emphasis */
+em { font-style: italic; }
+strong { font-weight: 700; }
+.highlight { color: var(--maroon); font-weight: 600; }
+
+/* SVG containers */
+.figure { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+.figure svg { max-width: 100%; max-height: 100%; }
+
+/* Two-column layout */
+.cols { display: flex; gap: 48px; flex: 1; min-height: 0; }
+.col { flex: 1; display: flex; flex-direction: column; }
+
+/* Scaling: everything inside the deck is sized relative to deck width */
+#deck { font-size: calc(100vw / 80); }
+@media (min-aspect-ratio: 16/9) { #deck { font-size: calc(100vh / 45); } }
+</style>
+</head>
+<body>
+<div id="deck">
+  <div id="progress"></div>
+  <div id="counter"></div>
+
+  <!-- ====== SLIDE 1: Title ====== -->
+  <div class="slide title-slide">
+    <h2>Lecture 34</h2>
+    <h1>Coding Agent with File I/O &amp; Bash</h1>
+    <div class="subtitle">Theme 4: Agentic Systems &mdash; Building a Mini Claude Code (3/5)</div>
+    <div class="course">CSCI 3397 / PSYC 3317 &nbsp;|&nbsp; Spring 2026 &nbsp;|&nbsp; Donglai Wei</div>
+  </div>
+
+  <!-- ====== SLIDE 2: Housekeeping ====== -->
+  <div class="slide">
+    <h1>Housekeeping</h1>
+    <ul>
+      <li><strong>Recap &mdash; Lec. 33:</strong> Tool use lets the LLM call functions; the agent loop (ReAct) drives <em>Think &rarr; Act &rarr; Observe</em> cycles. We built the core loop in ~30 lines.</li>
+      <li style="margin-top:0.5em;"><strong>Today&rsquo;s Shift:</strong> We give the agent <span class="highlight">real power</span> &mdash; reading/writing files and executing shell commands. This turns it into a <em>coding agent</em> that can write and run its own scripts.</li>
+      <li style="margin-top:0.5em;"><strong>Reading:</strong> nano-claude-code <code>tools.py</code>, <code>context.py</code>, <code>compaction.py</code></li>
+    </ul>
+    <div style="margin-top:auto; padding-top:1em; border-top:2px solid #eee; font-size:0.8em; color:#888;">
+      <strong>Today&rsquo;s roadmap:</strong>&ensp; File I/O Tools &rarr; Bash Tool &amp; Permissions &rarr; System Prompt Engineering &rarr; Context Window Management
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 3: Section — File I/O Tools ====== -->
+  <div class="slide section-slide">
+    <div class="section-num">Section 1</div>
+    <h1>File I/O Tools</h1>
+  </div>
+
+  <!-- ====== SLIDE 4: The Tool Suite (SVG Figure) ====== -->
+  <div class="slide">
+    <h1>The Tool Suite</h1>
+    <div class="figure">
+      <svg viewBox="0 0 1050 480" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+        <defs>
+          <filter id="sh1" x="-4%" y="-4%" width="108%" height="116%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.10"/>
+          </filter>
+          <linearGradient id="gGreen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#d4edda"/><stop offset="100%" stop-color="#c3e6cb"/>
+          </linearGradient>
+          <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#cce5ff"/><stop offset="100%" stop-color="#b8daff"/>
+          </linearGradient>
+          <linearGradient id="gOrange" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fff3cd"/><stop offset="100%" stop-color="#ffeeba"/>
+          </linearGradient>
+          <linearGradient id="gRed" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f8d7da"/><stop offset="100%" stop-color="#f5c6cb"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Category labels -->
+        <text x="20" y="30" font-size="15" font-weight="700" fill="#800000">File I/O</text>
+        <text x="20" y="170" font-size="15" font-weight="700" fill="#800000">Search</text>
+        <text x="20" y="290" font-size="15" font-weight="700" fill="#800000">Execution</text>
+        <text x="20" y="390" font-size="15" font-weight="700" fill="#800000">Notebook</text>
+
+        <!-- File I/O row -->
+        <rect x="110" y="10" width="180" height="70" rx="10" fill="url(#gGreen)" filter="url(#sh1)" stroke="#28a745" stroke-width="1.5"/>
+        <text x="200" y="38" font-size="18" font-weight="700" fill="#155724" text-anchor="middle">Read</text>
+        <text x="200" y="60" font-size="11" fill="#155724" text-anchor="middle">read_only = True</text>
+
+        <rect x="310" y="10" width="180" height="70" rx="10" fill="url(#gBlue)" filter="url(#sh1)" stroke="#2176ff" stroke-width="1.5"/>
+        <text x="400" y="38" font-size="18" font-weight="700" fill="#004085" text-anchor="middle">Write</text>
+        <text x="400" y="60" font-size="11" fill="#004085" text-anchor="middle">creates / overwrites files</text>
+
+        <rect x="510" y="10" width="180" height="70" rx="10" fill="url(#gOrange)" filter="url(#sh1)" stroke="#e0a800" stroke-width="1.5"/>
+        <text x="600" y="38" font-size="18" font-weight="700" fill="#856404" text-anchor="middle">Edit</text>
+        <text x="600" y="60" font-size="11" fill="#856404" text-anchor="middle">exact string replacement</text>
+
+        <rect x="710" y="10" width="180" height="70" rx="10" fill="url(#gGreen)" filter="url(#sh1)" stroke="#28a745" stroke-width="1.5"/>
+        <text x="800" y="38" font-size="18" font-weight="700" fill="#155724" text-anchor="middle">Glob</text>
+        <text x="800" y="60" font-size="11" fill="#155724" text-anchor="middle">find files by pattern</text>
+
+        <!-- Divider -->
+        <line x1="110" y1="100" x2="890" y2="100" stroke="#e0e0e0" stroke-width="1"/>
+
+        <!-- Search row -->
+        <rect x="110" y="130" width="180" height="70" rx="10" fill="url(#gGreen)" filter="url(#sh1)" stroke="#28a745" stroke-width="1.5"/>
+        <text x="200" y="158" font-size="18" font-weight="700" fill="#155724" text-anchor="middle">Grep</text>
+        <text x="200" y="180" font-size="11" fill="#155724" text-anchor="middle">regex search (ripgrep)</text>
+
+        <rect x="310" y="130" width="180" height="70" rx="10" fill="url(#gGreen)" filter="url(#sh1)" stroke="#28a745" stroke-width="1.5"/>
+        <text x="400" y="158" font-size="18" font-weight="700" fill="#155724" text-anchor="middle">WebSearch</text>
+        <text x="400" y="180" font-size="11" fill="#155724" text-anchor="middle">search the web</text>
+
+        <rect x="510" y="130" width="180" height="70" rx="10" fill="url(#gGreen)" filter="url(#sh1)" stroke="#28a745" stroke-width="1.5"/>
+        <text x="600" y="158" font-size="18" font-weight="700" fill="#155724" text-anchor="middle">WebFetch</text>
+        <text x="600" y="180" font-size="11" fill="#155724" text-anchor="middle">fetch URL content</text>
+
+        <!-- Divider -->
+        <line x1="110" y1="220" x2="890" y2="220" stroke="#e0e0e0" stroke-width="1"/>
+
+        <!-- Execution row -->
+        <rect x="110" y="250" width="280" height="70" rx="10" fill="url(#gRed)" filter="url(#sh1)" stroke="#dc3545" stroke-width="2"/>
+        <text x="250" y="278" font-size="20" font-weight="700" fill="#721c24" text-anchor="middle">Bash</text>
+        <text x="250" y="300" font-size="11" fill="#721c24" text-anchor="middle">run shell commands (dangerous)</text>
+
+        <!-- Divider -->
+        <line x1="110" y1="340" x2="890" y2="340" stroke="#e0e0e0" stroke-width="1"/>
+
+        <!-- Notebook row -->
+        <rect x="110" y="360" width="220" height="60" rx="10" fill="url(#gOrange)" filter="url(#sh1)" stroke="#e0a800" stroke-width="1.5"/>
+        <text x="220" y="387" font-size="17" font-weight="700" fill="#856404" text-anchor="middle">NotebookEdit</text>
+        <text x="220" y="406" font-size="11" fill="#856404" text-anchor="middle">modify .ipynb cells</text>
+
+        <!-- Legend -->
+        <rect x="110" y="445" width="16" height="16" rx="3" fill="#28a745"/>
+        <text x="132" y="458" font-size="12" fill="#555">read_only (auto-approve)</text>
+
+        <rect x="340" y="445" width="16" height="16" rx="3" fill="#2176ff"/>
+        <text x="362" y="458" font-size="12" fill="#555">write (needs permission)</text>
+
+        <rect x="580" y="445" width="16" height="16" rx="3" fill="#e0a800"/>
+        <text x="602" y="458" font-size="12" fill="#555">edit (needs permission)</text>
+
+        <rect x="800" y="445" width="16" height="16" rx="3" fill="#dc3545"/>
+        <text x="822" y="458" font-size="12" fill="#555">dangerous (always ask)</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 5: Read Tool Schema ====== -->
+  <div class="slide">
+    <h1>Read Tool &mdash; Schema &amp; Usage</h1>
+    <div class="code-block"><span class="cmt"># Tool definition (JSON Schema &rarr; the LLM reads this)</span>
+{<span class="str">"name"</span>: <span class="str">"Read"</span>,
+ <span class="str">"input_schema"</span>: {
+   <span class="str">"properties"</span>: {
+     <span class="str">"file_path"</span>: {<span class="str">"type"</span>: <span class="str">"string"</span>},
+     <span class="str">"offset"</span>:    {<span class="str">"type"</span>: <span class="str">"integer"</span>, <span class="str">"description"</span>: <span class="str">"Start line number"</span>},
+     <span class="str">"limit"</span>:     {<span class="str">"type"</span>: <span class="str">"integer"</span>, <span class="str">"description"</span>: <span class="str">"Number of lines"</span>}
+   }
+ }}</div>
+    <ul style="margin-top:0.6em;">
+      <li>Returns file content with line numbers (like <code>cat -n</code>)</li>
+      <li><code>offset</code> + <code>limit</code> for large files &mdash; agent learns to read specific sections</li>
+      <li>Can also read <strong>images</strong> (base64), <strong>PDFs</strong>, <strong>Jupyter notebooks</strong></li>
+    </ul>
+    <div class="code-block" style="margin-top:0.4em;"><span class="kw">def</span> <span class="fn">read_tool</span>(params, config):
+    path = params[<span class="str">"file_path"</span>]
+    content = <span class="fn">open</span>(path).<span class="fn">readlines</span>()
+    <span class="cmt"># Add line numbers, apply offset/limit</span>
+    <span class="kw">return</span> formatted_content
+
+<span class="fn">register_tool</span>(ToolDef(
+    name=<span class="str">"Read"</span>, schema=READ_SCHEMA, func=read_tool,
+    read_only=<span class="kw">True</span>, concurrent_safe=<span class="kw">True</span>
+))</div>
+  </div>
+
+  <!-- ====== SLIDE 6: Write & Edit Tools ====== -->
+  <div class="slide">
+    <h1>Write &amp; Edit Tools</h1>
+    <div class="cols">
+      <div class="col">
+        <h2>Write</h2>
+        <ul>
+          <li>Create or <strong>overwrite</strong> a file</li>
+          <li>Auto-creates parent directories</li>
+          <li>Used for: new scripts, configs, results</li>
+          <li>Sends the <em>entire</em> file content</li>
+        </ul>
+        <div class="code-block" style="font-size:0.62em; margin-top:0.4em;"><span class="cmt"># Agent call:</span>
+Write({
+  <span class="str">"file_path"</span>: <span class="str">"analyze.py"</span>,
+  <span class="str">"content"</span>: <span class="str">"import skimage\n..."</span>
+})</div>
+      </div>
+      <div class="col">
+        <h2>Edit</h2>
+        <ul>
+          <li>Exact string replacement: <code>old_string</code> &rarr; <code>new_string</code></li>
+          <li>More <strong>surgical</strong> than Write &mdash; only sends the diff</li>
+          <li><code>replace_all</code> flag for renaming variables</li>
+          <li>LLM must provide a <em>unique</em> <code>old_string</code></li>
+        </ul>
+        <div class="code-block" style="font-size:0.62em; margin-top:0.4em;"><span class="cmt"># Agent call:</span>
+Edit({
+  <span class="str">"file_path"</span>: <span class="str">"analyze.py"</span>,
+  <span class="str">"old_string"</span>: <span class="str">"threshold=0.5"</span>,
+  <span class="str">"new_string"</span>: <span class="str">"threshold=0.3"</span>
+})</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 7: Section — Bash Tool ====== -->
+  <div class="slide section-slide">
+    <div class="section-num">Section 2</div>
+    <h1>The Bash Tool &amp; Permission Gates</h1>
+  </div>
+
+  <!-- ====== SLIDE 8: Bash Tool ====== -->
+  <div class="slide">
+    <h1>The Bash Tool &mdash; Executing Commands</h1>
+    <div class="code-block"><span class="cmt"># Schema</span>
+{<span class="str">"name"</span>: <span class="str">"Bash"</span>, <span class="str">"input_schema"</span>: {
+   <span class="str">"properties"</span>: {
+     <span class="str">"command"</span>: {<span class="str">"type"</span>: <span class="str">"string"</span>, <span class="str">"description"</span>: <span class="str">"Shell command to execute"</span>},
+     <span class="str">"timeout"</span>: {<span class="str">"type"</span>: <span class="str">"integer"</span>, <span class="str">"description"</span>: <span class="str">"Timeout in ms"</span>}
+   }}}</div>
+    <div class="cols" style="margin-top:0.4em;">
+      <div class="col">
+        <h2 style="color:#28a745;">The Power</h2>
+        <ul style="font-size:0.88em;">
+          <li>Run scripts: <code>python analyze_cells.py</code></li>
+          <li>Install packages: <code>pip install scikit-image</code></li>
+          <li>Git operations: <code>git diff</code>, <code>git log</code></li>
+          <li>Pipelines: <code>ffmpeg</code>, <code>convert</code>, <code>ls -la</code></li>
+        </ul>
+      </div>
+      <div class="col">
+        <h2 style="color:#dc3545;">The Danger</h2>
+        <ul style="font-size:0.88em;">
+          <li><code>rm -rf /</code></li>
+          <li><code>curl malicious_url | bash</code></li>
+          <li>Exfiltrate data over the network</li>
+          <li>Modify system files</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:auto; text-align:center; font-size:0.8em; color:#888;">This is why we need <strong style="color:var(--maroon)">permission gates</strong>.</p>
+  </div>
+
+  <!-- ====== SLIDE 9: Permission Model (SVG) ====== -->
+  <div class="slide">
+    <h1>Permission Model</h1>
+    <div class="figure">
+      <svg viewBox="0 0 1050 420" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+        <defs>
+          <filter id="sh2" x="-3%" y="-3%" width="106%" height="112%">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.12"/>
+          </filter>
+        </defs>
+
+        <!-- Manual column -->
+        <rect x="30" y="20" width="300" height="290" rx="16" fill="#fff5f5" stroke="#dc3545" stroke-width="2" filter="url(#sh2)"/>
+        <circle cx="180" cy="70" r="28" fill="#dc3545"/>
+        <line x1="164" y1="54" x2="196" y2="86" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+        <line x1="196" y1="54" x2="164" y2="86" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+        <text x="180" y="125" font-size="22" font-weight="700" fill="#721c24" text-anchor="middle">"manual"</text>
+        <text x="180" y="160" font-size="14" fill="#555" text-anchor="middle">Ask for every tool call.</text>
+        <text x="180" y="185" font-size="14" fill="#555" text-anchor="middle">Maximum safety.</text>
+        <text x="180" y="230" font-size="13" fill="#999" text-anchor="middle">Read? &rarr; Ask</text>
+        <text x="180" y="252" font-size="13" fill="#999" text-anchor="middle">Write? &rarr; Ask</text>
+        <text x="180" y="274" font-size="13" fill="#999" text-anchor="middle">Bash? &rarr; Ask</text>
+
+        <!-- Auto column -->
+        <rect x="375" y="20" width="300" height="290" rx="16" fill="#fff8ee" stroke="#e0a800" stroke-width="2" filter="url(#sh2)"/>
+        <circle cx="525" cy="70" r="28" fill="#e0a800"/>
+        <circle cx="525" cy="70" r="14" fill="none" stroke="#fff" stroke-width="3.5"/>
+        <line x1="525" y1="56" x2="525" y2="63" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+        <line x1="525" y1="70" x2="533" y2="76" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+        <text x="525" y="125" font-size="22" font-weight="700" fill="#856404" text-anchor="middle">"auto"</text>
+        <text x="525" y="160" font-size="14" fill="#555" text-anchor="middle">Auto-approve read_only tools.</text>
+        <text x="525" y="185" font-size="14" fill="#555" text-anchor="middle">Ask for writes &amp; execution.</text>
+        <text x="525" y="230" font-size="13" fill="#28a745" text-anchor="middle">Read? &rarr; Auto-approve</text>
+        <text x="525" y="252" font-size="13" fill="#e0a800" text-anchor="middle">Write? &rarr; Ask</text>
+        <text x="525" y="274" font-size="13" fill="#dc3545" text-anchor="middle">Bash? &rarr; Ask</text>
+
+        <!-- Accept-all column -->
+        <rect x="720" y="20" width="300" height="290" rx="16" fill="#f0fff0" stroke="#28a745" stroke-width="2" filter="url(#sh2)"/>
+        <circle cx="870" cy="70" r="28" fill="#28a745"/>
+        <text x="870" y="79" font-size="28" font-weight="700" fill="#fff" text-anchor="middle">!</text>
+        <text x="870" y="125" font-size="22" font-weight="700" fill="#155724" text-anchor="middle">"accept-all"</text>
+        <text x="870" y="160" font-size="14" fill="#555" text-anchor="middle">Approve everything.</text>
+        <text x="870" y="185" font-size="14" fill="#555" text-anchor="middle">For trusted workflows only.</text>
+        <text x="870" y="230" font-size="13" fill="#28a745" text-anchor="middle">Read? &rarr; Auto-approve</text>
+        <text x="870" y="252" font-size="13" fill="#28a745" text-anchor="middle">Write? &rarr; Auto-approve</text>
+        <text x="870" y="274" font-size="13" fill="#28a745" text-anchor="middle">Bash? &rarr; Auto-approve</text>
+
+        <!-- Arrow -->
+        <defs><marker id="ah" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#999"/></marker></defs>
+        <line x1="100" y1="370" x2="950" y2="370" stroke="#999" stroke-width="2" marker-end="url(#ah)"/>
+        <text x="100" y="400" font-size="14" fill="#dc3545" font-weight="600">&larr; More Safety</text>
+        <text x="870" y="400" font-size="14" fill="#28a745" font-weight="600" text-anchor="end">More Convenience &rarr;</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 10: Permission Gate Code ====== -->
+  <div class="slide">
+    <h1>Permission Gate &mdash; Pseudocode</h1>
+    <div class="code-block" style="font-size:0.65em;"><span class="cmt"># Three permission modes</span>
+MODES = [<span class="str">"manual"</span>, <span class="str">"auto"</span>, <span class="str">"accept-all"</span>]
+
+<span class="kw">def</span> <span class="fn">check_permission</span>(tool_call, tool_def, mode):
+    <span class="cmt"># accept-all: approve everything</span>
+    <span class="kw">if</span> mode == <span class="str">"accept-all"</span>:
+        <span class="kw">return</span> <span class="kw">True</span>
+
+    <span class="cmt"># auto: approve read_only tools automatically</span>
+    <span class="kw">if</span> mode == <span class="str">"auto"</span> <span class="kw">and</span> tool_def.read_only:
+        <span class="kw">return</span> <span class="kw">True</span>
+
+    <span class="cmt"># manual, or non-read-only in auto mode: ask the user</span>
+    <span class="kw">yield</span> PermissionRequest(tool_call.name, tool_call.args)
+    <span class="cmt"># &rarr; pause execution, display prompt, wait for user response</span></div>
+    <ul style="margin-top:0.6em;">
+      <li><strong>Read, Glob, Grep</strong> &rarr; <code>read_only=True</code> &rarr; auto-approved</li>
+      <li><strong>Write, Edit, Bash</strong> &rarr; <code>read_only=False</code> &rarr; require user confirmation</li>
+      <li>Claude Code also has a <strong>whitelist</strong> of safe Bash commands: <code>ls</code>, <code>git status</code>, <code>npm test</code></li>
+    </ul>
+    <p style="margin-top:0.5em;"><strong>Output truncation:</strong> Tool results &gt; 32K chars are truncated (first 50% + last 25%) to avoid flooding the context window.</p>
+  </div>
+
+  <!-- ====== SLIDE 11: Section — System Prompt ====== -->
+  <div class="slide section-slide">
+    <div class="section-num">Section 3</div>
+    <h1>System Prompt Engineering</h1>
+  </div>
+
+  <!-- ====== SLIDE 12: System Prompt Assembly (SVG) ====== -->
+  <div class="slide">
+    <h1>System Prompt Assembly &mdash; <code>context.py</code></h1>
+    <div class="figure">
+      <svg viewBox="0 0 1050 440" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+        <defs>
+          <filter id="sh3" x="-3%" y="-3%" width="106%" height="112%">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.10"/>
+          </filter>
+          <marker id="ah2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#800000"/></marker>
+        </defs>
+
+        <!-- Center box -->
+        <rect x="340" y="100" width="370" height="240" rx="16" fill="#fff" stroke="#800000" stroke-width="3" filter="url(#sh3)"/>
+        <text x="525" y="135" font-size="20" font-weight="700" fill="#800000" text-anchor="middle">System Prompt</text>
+        <line x1="370" y1="148" x2="680" y2="148" stroke="#eee" stroke-width="1.5"/>
+        <text x="380" y="175" font-size="13" fill="#555">1. Base identity &amp; role</text>
+        <text x="380" y="200" font-size="13" fill="#555">2. Current date &amp; environment</text>
+        <text x="380" y="225" font-size="13" fill="#555">3. Git context (branch, commits)</text>
+        <text x="380" y="250" font-size="13" fill="#555">4. CLAUDE.md instructions</text>
+        <text x="380" y="275" font-size="13" fill="#555">5. Memory index (recalled facts)</text>
+        <text x="380" y="300" font-size="13" fill="#555">6. Tool usage instructions</text>
+        <text x="525" y="328" font-size="12" fill="#999" text-anchor="middle" font-style="italic">context.py (165 lines)</text>
+
+        <!-- Source: config (top-left) -->
+        <rect x="30" y="10" width="180" height="52" rx="10" fill="#f5f5f5" stroke="#ccc" stroke-width="1.5" filter="url(#sh3)"/>
+        <text x="120" y="42" font-size="14" font-weight="600" fill="#333" text-anchor="middle">config / identity</text>
+        <line x1="210" y1="36" x2="340" y2="140" stroke="#800000" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+        <!-- Source: git (top-right) -->
+        <rect x="840" y="10" width="180" height="52" rx="10" fill="#f5f5f5" stroke="#ccc" stroke-width="1.5" filter="url(#sh3)"/>
+        <text x="930" y="42" font-size="14" font-weight="600" fill="#333" text-anchor="middle">git status/log</text>
+        <line x1="840" y1="36" x2="710" y2="140" stroke="#800000" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+        <!-- Source: CLAUDE.md (left) -->
+        <rect x="30" y="175" width="180" height="52" rx="10" fill="#fff3cd" stroke="#e0a800" stroke-width="1.5" filter="url(#sh3)"/>
+        <text x="120" y="207" font-size="14" font-weight="600" fill="#856404" text-anchor="middle">CLAUDE.md</text>
+        <line x1="210" y1="201" x2="340" y2="220" stroke="#800000" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+        <!-- Source: MEMORY.md (left-bottom) -->
+        <rect x="30" y="280" width="180" height="52" rx="10" fill="#d4edda" stroke="#28a745" stroke-width="1.5" filter="url(#sh3)"/>
+        <text x="120" y="312" font-size="14" font-weight="600" fill="#155724" text-anchor="middle">MEMORY.md</text>
+        <line x1="210" y1="306" x2="340" y2="280" stroke="#800000" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+        <!-- Source: tool schemas (right) -->
+        <rect x="840" y="175" width="180" height="52" rx="10" fill="#cce5ff" stroke="#2176ff" stroke-width="1.5" filter="url(#sh3)"/>
+        <text x="930" y="207" font-size="14" font-weight="600" fill="#004085" text-anchor="middle">tool schemas</text>
+        <line x1="840" y1="201" x2="710" y2="220" stroke="#800000" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+        <!-- Source: os.environ (right-bottom) -->
+        <rect x="840" y="280" width="180" height="52" rx="10" fill="#f5f5f5" stroke="#ccc" stroke-width="1.5" filter="url(#sh3)"/>
+        <text x="930" y="312" font-size="14" font-weight="600" fill="#333" text-anchor="middle">os.environ</text>
+        <line x1="840" y1="306" x2="710" y2="280" stroke="#800000" stroke-width="1.5" marker-end="url(#ah2)"/>
+
+        <!-- Bottom note -->
+        <text x="525" y="410" font-size="15" fill="#800000" text-anchor="middle" font-weight="600">Good tool descriptions are critical &mdash; the LLM reads them to decide which tool to call.</text>
+        <text x="525" y="435" font-size="13" fill="#999" text-anchor="middle">"Use Read instead of cat in Bash" &rarr; guides the LLM to prefer the structured tool</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 13: Section — Context Window ====== -->
+  <div class="slide section-slide">
+    <div class="section-num">Section 4</div>
+    <h1>Context Window Management</h1>
+  </div>
+
+  <!-- ====== SLIDE 14: Two-Layer Compaction (SVG) ====== -->
+  <div class="slide">
+    <h1>Two-Layer Context Compaction</h1>
+    <div class="figure">
+      <svg viewBox="0 0 1050 460" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+        <defs>
+          <filter id="sh4" x="-3%" y="-3%" width="106%" height="112%">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.10"/>
+          </filter>
+          <marker id="ah3" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#800000"/></marker>
+        </defs>
+
+        <!-- Context window bar -->
+        <text x="30" y="25" font-size="15" font-weight="700" fill="#333">Context Window (200K tokens)</text>
+        <rect x="30" y="38" width="990" height="40" rx="8" fill="#f0f0f0" stroke="#ccc" stroke-width="1.5"/>
+        <rect x="30" y="38" width="693" height="40" rx="8" fill="#ffeeba" stroke="#e0a800" stroke-width="0"/>
+        <text x="376" y="63" font-size="13" font-weight="600" fill="#856404" text-anchor="middle">70% used</text>
+        <text x="850" y="63" font-size="13" font-weight="600" fill="#999" text-anchor="middle">30% free</text>
+
+        <!-- Threshold line -->
+        <line x1="723" y1="32" x2="723" y2="84" stroke="#dc3545" stroke-width="2" stroke-dasharray="6,3"/>
+        <text x="723" y="100" font-size="12" fill="#dc3545" text-anchor="middle" font-weight="600">70% threshold</text>
+
+        <!-- Arrow down -->
+        <line x1="525" y1="108" x2="525" y2="138" stroke="#800000" stroke-width="2" marker-end="url(#ah3)"/>
+        <text x="525" y="128" font-size="12" fill="#800000" text-anchor="middle" font-weight="600" dx="30">triggers compaction</text>
+
+        <!-- Layer 1 box -->
+        <rect x="30" y="148" width="465" height="200" rx="14" fill="#fff" stroke="#28a745" stroke-width="2.5" filter="url(#sh4)"/>
+        <rect x="30" y="148" width="465" height="42" rx="14" fill="#28a745"/>
+        <rect x="30" y="172" width="465" height="18" fill="#28a745"/>
+        <text x="262" y="176" font-size="17" font-weight="700" fill="#fff" text-anchor="middle">Layer 1: Snip (free)</text>
+        <text x="60" y="220" font-size="14" fill="#333">Rule-based truncation of old tool results</text>
+        <text x="60" y="246" font-size="13" fill="#555">For messages beyond the last 6 turns:</text>
+        <text x="80" y="270" font-size="13" fill="#555">&#x2022; Keep first 50% + last 25%</text>
+        <text x="80" y="292" font-size="13" fill="#555">&#x2022; Insert: <tspan font-family="monospace" font-size="12" fill="#1a7f37">[... N chars snipped ...]</tspan></text>
+        <text x="60" y="324" font-size="13" fill="#28a745" font-weight="600">Cost: O(n) string processing, zero API calls</text>
+
+        <!-- Arrow between layers -->
+        <line x1="495" y1="248" x2="555" y2="248" stroke="#800000" stroke-width="2" marker-end="url(#ah3)"/>
+        <text x="525" y="278" font-size="11" fill="#800000" text-anchor="middle" font-weight="600">still too big?</text>
+
+        <!-- Layer 2 box -->
+        <rect x="555" y="148" width="465" height="200" rx="14" fill="#fff" stroke="#2176ff" stroke-width="2.5" filter="url(#sh4)"/>
+        <rect x="555" y="148" width="465" height="42" rx="14" fill="#2176ff"/>
+        <rect x="555" y="172" width="465" height="18" fill="#2176ff"/>
+        <text x="787" y="176" font-size="17" font-weight="700" fill="#fff" text-anchor="middle">Layer 2: AI Summarize (1 API call)</text>
+        <text x="585" y="220" font-size="14" fill="#333">LLM-driven summarization of old messages</text>
+        <text x="585" y="246" font-size="13" fill="#555">Split messages into [old 70% | recent 30%]</text>
+        <text x="605" y="270" font-size="13" fill="#555">&#x2022; Ask LLM to summarize the old portion</text>
+        <text x="605" y="292" font-size="13" fill="#555">&#x2022; Replace old messages with summary</text>
+        <text x="585" y="324" font-size="13" fill="#2176ff" font-weight="600">Cost: 1 API call, significant token savings</text>
+
+        <!-- Bottom note -->
+        <text x="525" y="395" font-size="15" fill="#333" text-anchor="middle">Token estimation: <tspan font-family="monospace" font-size="14" fill="#800000">len(text) / 3.5</tspan> &mdash; simple heuristic that works across models</text>
+        <text x="525" y="425" font-size="14" fill="#800000" text-anchor="middle" font-weight="600">Without compaction, long analysis sessions crash. With it, the agent works for hours.</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 15: Compaction Code ====== -->
+  <div class="slide">
+    <h1>Compaction &mdash; <code>compaction.py</code></h1>
+    <div class="code-block" style="font-size:0.62em;"><span class="kw">def</span> <span class="fn">maybe_compact</span>(messages, context_limit):
+    tokens = <span class="fn">sum</span>(<span class="fn">len</span>(<span class="fn">str</span>(m)) / <span class="num">3.5</span> <span class="kw">for</span> m <span class="kw">in</span> messages)
+    <span class="kw">if</span> tokens &lt; context_limit * <span class="num">0.7</span>:
+        <span class="kw">return</span> messages  <span class="cmt"># no action needed</span>
+
+    <span class="cmt"># Layer 1: snip old tool results (free, rule-based)</span>
+    messages = <span class="fn">snip_old_tool_results</span>(messages, preserve_last_n=<span class="num">6</span>)
+
+    <span class="cmt"># Re-check token count</span>
+    tokens = <span class="fn">sum</span>(<span class="fn">len</span>(<span class="fn">str</span>(m)) / <span class="num">3.5</span> <span class="kw">for</span> m <span class="kw">in</span> messages)
+    <span class="kw">if</span> tokens > context_limit * <span class="num">0.7</span>:
+        <span class="cmt"># Layer 2: AI summarization (costs one API call)</span>
+        messages = <span class="fn">ai_summarize_old_messages</span>(messages)
+
+    <span class="kw">return</span> messages</div>
+    <ul style="margin-top:0.6em;">
+      <li><strong>Trigger:</strong> when estimated tokens exceed 70% of context limit</li>
+      <li><strong>Layer 1 (Snip):</strong> Truncate old tool results &mdash; keep first 50% + last 25%. Zero cost.</li>
+      <li><strong>Layer 2 (Summarize):</strong> Split [old 70% | recent 30%], ask LLM to summarize old portion. Costs 1 API call.</li>
+      <li><strong>Key design:</strong> Try the free approach first; only spend an API call if necessary.</li>
+    </ul>
+  </div>
+
+  <!-- ====== SLIDE 16: Demo ====== -->
+  <div class="slide">
+    <h1>Demo: End-to-End Coding Agent</h1>
+    <p style="font-size:0.85em; color:#555;"><em>&ldquo;Read all .tiff files in slides/, write a Python script that applies Otsu thresholding, counts cells, saves results to CSV, then show me the statistics.&rdquo;</em></p>
+    <div class="figure" style="flex:1.2;">
+      <svg viewBox="0 0 1050 310" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, sans-serif">
+        <defs>
+          <filter id="sh5" x="-3%" y="-3%" width="106%" height="112%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+          </filter>
+          <marker id="ah4" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#800000"/></marker>
+        </defs>
+
+        <!-- Step 1 -->
+        <rect x="15" y="20" width="155" height="80" rx="12" fill="#d4edda" stroke="#28a745" stroke-width="1.5" filter="url(#sh5)"/>
+        <text x="92" y="50" font-size="12" font-weight="700" fill="#155724" text-anchor="middle">1. Glob</text>
+        <text x="92" y="72" font-size="11" fill="#155724" text-anchor="middle">slides/*.tiff</text>
+        <text x="92" y="88" font-size="10" fill="#888" text-anchor="middle">discover files</text>
+        <line x1="170" y1="60" x2="195" y2="60" stroke="#800000" stroke-width="1.5" marker-end="url(#ah4)"/>
+
+        <!-- Step 2 -->
+        <rect x="195" y="20" width="155" height="80" rx="12" fill="#d4edda" stroke="#28a745" stroke-width="1.5" filter="url(#sh5)"/>
+        <text x="272" y="50" font-size="12" font-weight="700" fill="#155724" text-anchor="middle">2. Read</text>
+        <text x="272" y="72" font-size="11" fill="#155724" text-anchor="middle">sample file</text>
+        <text x="272" y="88" font-size="10" fill="#888" text-anchor="middle">understand format</text>
+        <line x1="350" y1="60" x2="375" y2="60" stroke="#800000" stroke-width="1.5" marker-end="url(#ah4)"/>
+
+        <!-- Step 3 -->
+        <rect x="375" y="20" width="155" height="80" rx="12" fill="#cce5ff" stroke="#2176ff" stroke-width="1.5" filter="url(#sh5)"/>
+        <text x="452" y="50" font-size="12" font-weight="700" fill="#004085" text-anchor="middle">3. Write</text>
+        <text x="452" y="72" font-size="11" fill="#004085" text-anchor="middle">analyze.py</text>
+        <text x="452" y="88" font-size="10" fill="#888" text-anchor="middle">create script</text>
+        <line x1="530" y1="60" x2="555" y2="60" stroke="#800000" stroke-width="1.5" marker-end="url(#ah4)"/>
+
+        <!-- Step 4 -->
+        <rect x="555" y="20" width="155" height="80" rx="12" fill="#f8d7da" stroke="#dc3545" stroke-width="1.5" filter="url(#sh5)"/>
+        <text x="632" y="50" font-size="12" font-weight="700" fill="#721c24" text-anchor="middle">4. Bash</text>
+        <text x="632" y="72" font-size="11" fill="#721c24" text-anchor="middle">python analyze.py</text>
+        <text x="632" y="88" font-size="10" fill="#888" text-anchor="middle">execute script</text>
+        <line x1="710" y1="60" x2="735" y2="60" stroke="#800000" stroke-width="1.5" marker-end="url(#ah4)"/>
+
+        <!-- Step 5 -->
+        <rect x="735" y="20" width="155" height="80" rx="12" fill="#d4edda" stroke="#28a745" stroke-width="1.5" filter="url(#sh5)"/>
+        <text x="812" y="50" font-size="12" font-weight="700" fill="#155724" text-anchor="middle">5. Read</text>
+        <text x="812" y="72" font-size="11" fill="#155724" text-anchor="middle">results.csv</text>
+        <text x="812" y="88" font-size="10" fill="#888" text-anchor="middle">get results</text>
+
+        <!-- Error path -->
+        <rect x="555" y="140" width="155" height="65" rx="12" fill="#fff3cd" stroke="#e0a800" stroke-width="1.5" filter="url(#sh5)"/>
+        <text x="632" y="165" font-size="12" font-weight="700" fill="#856404" text-anchor="middle">Error?</text>
+        <text x="632" y="185" font-size="11" fill="#856404" text-anchor="middle">Read traceback</text>
+
+        <line x1="632" y1="100" x2="632" y2="140" stroke="#dc3545" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ah4)"/>
+
+        <rect x="375" y="140" width="155" height="65" rx="12" fill="#fff3cd" stroke="#e0a800" stroke-width="1.5" filter="url(#sh5)"/>
+        <text x="452" y="165" font-size="12" font-weight="700" fill="#856404" text-anchor="middle">Edit</text>
+        <text x="452" y="185" font-size="11" fill="#856404" text-anchor="middle">fix the bug</text>
+
+        <line x1="555" y1="172" x2="530" y2="172" stroke="#800000" stroke-width="1.5" marker-end="url(#ah4)"/>
+
+        <!-- Retry arrow -->
+        <path d="M452 205 L452 225 L632 225 L632 100" fill="none" stroke="#800000" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ah4)"/>
+        <text x="542" y="242" font-size="11" fill="#800000" text-anchor="middle" font-weight="600">retry</text>
+
+        <!-- Summary box -->
+        <rect x="15" y="140" width="320" height="80" rx="12" fill="#f5f5f5" stroke="#ccc" stroke-width="1.5" filter="url(#sh5)"/>
+        <text x="175" y="165" font-size="13" font-weight="700" fill="#800000" text-anchor="middle">Iterative Debugging</text>
+        <text x="175" y="185" font-size="12" fill="#555" text-anchor="middle">The agent reads tracebacks, edits the script,</text>
+        <text x="175" y="203" font-size="12" fill="#555" text-anchor="middle">and retries &mdash; no human intervention needed.</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 17: Wrap-Up ====== -->
+  <div class="slide">
+    <h1>Wrap-Up &amp; Key Takeaways</h1>
+    <ul>
+      <li><strong>What we built today:</strong> The full tool suite (<code>tools.py</code>) + system prompt (<code>context.py</code>) + context management (<code>compaction.py</code>). Our mini Claude Code can now read, write, search, and execute.</li>
+      <li style="margin-top:0.5em;"><strong>The formula:</strong></li>
+    </ul>
+    <div style="text-align:center; margin:0.5em 0; font-size:1.05em; color:var(--maroon); font-weight:600;">
+      Coding Agent = Agent Loop + Tools + System Prompt + Compaction
+    </div>
+    <div style="text-align:center; font-size:0.8em; color:#888; margin-bottom:0.6em;">
+      These 4 components (&lt; 700 lines total) give you 80% of what Claude Code does.
+    </div>
+    <ul>
+      <li><strong>For biomedical AI:</strong> System prompts can encode domain knowledge, safety constraints, and library conventions (scikit-image, pandas, matplotlib).</li>
+      <li style="margin-top:0.5em;"><strong>Next time (Lec. 35):</strong> RAG, persistent memory, and multi-agent systems. We add literature search, session recall, and task delegation to sub-agents.</li>
+    </ul>
+    <div style="margin-top:auto; padding-top:1em; border-top:2px solid #eee; text-align:center; font-size:0.8em; color:#888;">
+      Reading: nano-claude-code <code>tools.py</code>, <code>context.py</code>, <code>compaction.py</code>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  const progress = document.getElementById('progress');
+  const counter  = document.getElementById('counter');
+  let cur = 0;
+
+  function show(n) {
+    if (n < 0 || n >= total) return;
+    slides[cur].classList.remove('active');
+    cur = n;
+    slides[cur].classList.add('active');
+    progress.style.width = ((cur + 1) / total * 100) + '%';
+    counter.textContent = (cur + 1) + ' / ' + total;
+    // Hide counter on title slide for cleanliness
+    counter.style.color = cur === 0 ? 'rgba(255,255,255,0.4)' : '#999';
+  }
+
+  // Initialize
+  show(0);
+
+  // Keyboard
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault(); show(cur + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault(); show(cur - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault(); show(0);
+    } else if (e.key === 'End') {
+      e.preventDefault(); show(total - 1);
+    }
+  });
+
+  // Click to advance (right half), go back (left half)
+  document.getElementById('deck').addEventListener('click', function(e) {
+    if (e.clientX > window.innerWidth / 2) show(cur + 1);
+    else show(cur - 1);
+  });
+
+  // Touch swipe support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', function(e) {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) { dx < 0 ? show(cur + 1) : show(cur - 1); }
+  });
+})();
+</script>
+</body>
+</html>

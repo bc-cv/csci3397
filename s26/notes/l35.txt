@@ -1,0 +1,129 @@
+**Lecture 35: RAG, Memory & Multi-Agent Systems**
+
+**Total Time: 50 minutes**
+
+**[5 min] 0. Housekeeping**
+- **Recap**: Lec. 34 — we gave our agent file I/O and Bash tools, system prompt engineering, and context compaction. It can now write and run its own scripts.
+- **Today's Shift**: We add three capabilities that make agents truly useful for complex workflows: (1) retrieving external knowledge (RAG), (2) remembering across sessions (memory), and (3) delegating subtasks to specialized sub-agents (multi-agent).
+- **Reading**: LlamaIndex tutorial; Model Context Protocol spec; nano-claude-code `memory/`, `multi_agent/`, `mcp/`.
+
+**[12 min] 1. RAG — Retrieval-Augmented Generation**
+- **The Problem**: LLMs have a knowledge cutoff and no access to your private data (patient records, internal protocols, recent papers).
+- **RAG = Search + Generate**: Instead of fine-tuning the model, retrieve relevant documents and include them in the prompt.
+- **The RAG Pipeline** (4 steps):
+  1. **Chunk**: Split documents into passages (e.g., 512 tokens each, with overlap).
+  2. **Embed**: Convert each chunk to a vector using an embedding model (e.g., `text-embedding-3-small`, `BAAI/bge-base`).
+  3. **Index**: Store vectors in a vector database (FAISS, ChromaDB, Pinecone).
+  4. **Retrieve + Generate**: Given a query, embed it → find top-K nearest chunks → insert into prompt → LLM generates answer grounded in retrieved text.
+  ```python
+  # Simplified RAG
+  query_embedding = embed(user_query)
+  top_chunks = vector_db.search(query_embedding, k=5)
+  context = "\n".join(chunk.text for chunk in top_chunks)
+  response = llm(f"Based on these documents:\n{context}\n\nAnswer: {user_query}")
+  ```
+- **RAG as a Tool** (not a standalone system):
+  - In our agent architecture, RAG is just another tool the agent can call:
+    ```python
+    {"name": "SearchLiterature",
+     "description": "Search the indexed medical literature database. Returns relevant passages.",
+     "input_schema": {"properties": {"query": {"type": "string"}}}}
+    ```
+  - The agent decides *when* to search — it might read the slide first, form a hypothesis, then search for supporting literature.
+  - This is more flexible than a fixed RAG pipeline.
+- **Biomedical RAG Examples**:
+  - Index a hospital's radiology report archive → "Find prior reports for this patient with similar findings."
+  - Index PubMed abstracts → "What is the differential diagnosis for a 2cm hypodense liver lesion?"
+  - Index clinical protocols → "What is the standard staining protocol for Ki-67?"
+- **Embedding Models for Biomedical Text**:
+  - General: OpenAI `text-embedding-3-small`, Cohere `embed-v3`.
+  - Domain-specific: PubMedBERT embeddings, BioLORD.
+  - Key: evaluate retrieval quality on your domain before committing.
+
+**[12 min] 2. Persistent Memory**
+- **The Problem**: Each conversation starts from scratch. The agent forgets your preferences, project context, and past analyses.
+- **Memory = File-Based Persistence** (nano-claude-code's approach):
+  - Memory entries are Markdown files with YAML frontmatter:
+    ```markdown
+    ---
+    name: staining_protocol
+    description: Lab's standard H&E staining procedure
+    type: project
+    ---
+    Use 10-minute hematoxylin, 3-minute eosin. Deparaffinize at 60°C.
+    Counterstain with bluing reagent for 30 seconds.
+    ```
+  - `MEMORY.md` is an index file — one line per memory, always loaded into the system prompt.
+  - Two scopes: **user-level** (global preferences) and **project-level** (this analysis project).
+- **Memory Types**:
+  | Type | What It Stores | Example |
+  |------|---------------|---------|
+  | `user` | Role, preferences, expertise | "User is a pathology resident, prefers matplotlib over seaborn" |
+  | `feedback` | Corrections & confirmed approaches | "Don't use adaptive thresholding for H&E — Otsu works better here" |
+  | `project` | Ongoing work, decisions, deadlines | "Analyzing kidney biopsy cohort, 342 slides, deadline May 15" |
+  | `reference` | Pointers to external resources | "Slide metadata is in the REDCap database, project ID 4521" |
+- **Memory Operations** (registered as tools):
+  - `MemorySave(name, type, content)` — the agent saves insights during analysis.
+  - `MemorySearch(query)` — recall relevant memories, ranked by confidence × recency.
+  - `MemoryDelete(name)` — remove outdated info.
+- **When Memory Fires**: The agent reads MEMORY.md at the start of every conversation. If a user says "remember that we use 20x magnification for this cohort," the agent saves it and applies it in future sessions.
+- **Connection to RAG**: Memory is like a personal RAG system — small, curated, always available. RAG searches large external corpora; memory recalls your specific context.
+
+**[12 min] 3. Multi-Agent Systems**
+- **The Problem**: Complex tasks have independent subtasks. A single agent doing everything sequentially is slow and error-prone.
+- **Sub-Agents** (nano-claude-code's `multi_agent/`):
+  - The main agent can spawn specialized sub-agents that run in parallel:
+    ```python
+    {"name": "Agent",
+     "input_schema": {
+         "properties": {
+             "prompt": {"type": "string", "description": "Task for the sub-agent"},
+             "subagent_type": {"type": "string", "enum": ["researcher", "coder", "reviewer"]}
+    }}}
+    ```
+  - Each sub-agent gets a fresh context (no shared history) + a tailored system prompt.
+  - Sub-agents have their own tool access and run independently.
+- **Implementation** (ThreadPoolExecutor, not async):
+  ```python
+  class SubAgentManager:
+      def __init__(self, max_workers=3):
+          self.executor = ThreadPoolExecutor(max_workers=max_workers)
+
+      def spawn(self, prompt, system_prompt, tools):
+          future = self.executor.submit(agent_loop, prompt, tools, system_prompt)
+          return task_id  # main agent checks result later
+  ```
+  - **Depth limiting**: max 3 levels of nesting (agent → sub-agent → sub-sub-agent). Prevents infinite recursion.
+  - **Cooperative cancellation**: flag-based (Python threads can't be killed forcefully).
+- **Built-in Agent Types** (nano-claude-code):
+  - `researcher` — reads files, searches code, answers questions (read-only tools).
+  - `coder` — writes and modifies code (read + write tools).
+  - `reviewer` — code review with severity levels (read-only).
+- **Biomedical Multi-Agent Example** — Pathology Pipeline:
+  1. **Triage Agent**: Scan all slides, flag abnormal ones based on thumbnail analysis.
+  2. **Analysis Agent**: For each flagged slide, run cell counting + morphometry.
+  3. **Literature Agent**: Search PubMed for similar cases based on findings.
+  4. **Report Agent**: Compile all results into a structured diagnostic report.
+  - Agents 1–3 can run in parallel; Agent 4 waits for all results.
+- **MCP — Model Context Protocol** (brief introduction):
+  - Standard protocol for connecting agents to external tools/data sources.
+  - Instead of hardcoding tools, an MCP server exposes them dynamically.
+  - Example: a hospital PACS MCP server that provides `retrieve_study(patient_id)`, `list_series(study_id)`, `get_dicom(series_id)`.
+  - The agent discovers available tools at startup via `list_tools` call.
+  - Transport: stdio (local subprocess) or HTTP/SSE (remote server).
+  - **Why MCP matters for healthcare**: standardized, auditable access to clinical systems without embedding credentials in the agent.
+
+**[4 min] 4. Demo: Multi-Agent Pathology Pipeline**
+- Walk through the architecture:
+  1. User: "Analyze the 10 slides in `biopsy_cohort/` and generate a summary report."
+  2. Main agent: spawns a `researcher` sub-agent to search for the analysis protocol in memory.
+  3. Main agent: spawns 3 `coder` sub-agents in parallel, each analyzing ~3 slides.
+  4. Main agent: collects results, spawns a `researcher` to search literature for differential diagnosis.
+  5. Main agent: compiles the final report.
+- Show the task dependency graph and how agents coordinate.
+
+**[5 min] 5. Wrap-Up & Looking Ahead**
+- **Key Takeaway**: RAG gives agents access to external knowledge. Memory gives them continuity across sessions. Sub-agents give them parallelism and specialization. Together, these turn a single-loop agent into a system that can handle real clinical workflows.
+- **When NOT to Use Multi-Agent**: If the task is sequential and simple, one agent is better — sub-agents add latency and complexity. Use them when tasks are genuinely independent.
+- **What We Built**: `memory/` (persistence) + `multi_agent/` (parallelism) + RAG as a tool + MCP (external systems). Our mini Claude Code now has all major components.
+- **Next**: Lec. 36 — Putting it all together. Full nano-claude-code walkthrough, deployment considerations (HIPAA, FDA), and a live demo of the complete system.

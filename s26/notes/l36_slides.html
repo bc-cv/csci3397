@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 36 — Putting It All Together: Agentic Biomedical AI</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --maroon: #800000;
+    --maroon-light: #a00000;
+    --text: #333;
+    --bg: #fff;
+    --code-bg: #f5f5f5;
+    --code-border: #e0e0e0;
+    --slide-w: 1280;
+    --slide-h: 720;
+  }
+
+  html, body { height: 100%; overflow: hidden; background: #000; }
+
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ---------- deck container ---------- */
+  #deck {
+    position: relative;
+    width: calc(var(--slide-w) * 1px);
+    height: calc(var(--slide-h) * 1px);
+    overflow: hidden;
+    background: var(--bg);
+    box-shadow: 0 0 60px rgba(0,0,0,.4);
+  }
+
+  /* scale to fill viewport while keeping 16:9 */
+  @media screen {
+    #deck {
+      transform-origin: 0 0;
+    }
+  }
+
+  /* ---------- slides ---------- */
+  .slide {
+    position: absolute; inset: 0;
+    padding: 60px 80px 60px 80px;
+    display: flex; flex-direction: column; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity .35s ease;
+    background: var(--bg);
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  /* title slide override */
+  .slide.title-slide {
+    background: var(--maroon);
+    color: #fff;
+    text-align: center;
+  }
+
+  /* section divider */
+  .slide.section-slide {
+    background: var(--maroon);
+    color: #fff;
+    text-align: center;
+  }
+  .slide.section-slide h2 {
+    color: #fff;
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .slide.section-slide .section-number {
+    font-size: 20px;
+    opacity: 0.7;
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+  .slide.section-slide .section-subtitle {
+    font-size: 22px;
+    opacity: 0.85;
+    margin-top: 16px;
+    font-weight: 400;
+  }
+
+  /* ---------- typography ---------- */
+  h1 { font-size: 44px; color: var(--maroon); font-weight: 700; line-height: 1.15; margin-bottom: 20px; letter-spacing: -0.5px; }
+  h2 { font-size: 36px; color: var(--maroon); font-weight: 700; line-height: 1.2; margin-bottom: 18px; letter-spacing: -0.3px; }
+  h3 { font-size: 26px; color: var(--maroon); font-weight: 600; margin-bottom: 12px; }
+
+  .slide p, .slide li { font-size: 22px; line-height: 1.55; }
+  .slide ul { padding-left: 30px; }
+  .slide li { margin-bottom: 8px; }
+
+  code, .code {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.88em;
+  }
+
+  .slide table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 20px;
+    margin-top: 10px;
+  }
+  .slide th {
+    background: var(--maroon);
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .slide th:first-child { border-radius: 6px 0 0 0; }
+  .slide th:last-child { border-radius: 0 6px 0 0; }
+  .slide td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #e8e8e8;
+  }
+  .slide tr:nth-child(even) td { background: #fafafa; }
+
+  .small { font-size: 18px; color: #666; }
+  .highlight { color: var(--maroon); font-weight: 600; }
+  .center { text-align: center; }
+
+  /* ---------- progress bar ---------- */
+  #progress {
+    position: absolute; top: 0; left: 0; height: 4px;
+    background: var(--maroon);
+    transition: width .35s ease;
+    z-index: 100;
+  }
+
+  /* ---------- slide counter ---------- */
+  #counter {
+    position: absolute; bottom: 18px; right: 28px;
+    font-size: 16px; color: #999;
+    z-index: 100;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- SVG styles ---------- */
+  svg text { font-family: system-ui, -apple-system, sans-serif; }
+
+  /* ---------- two-col layout ---------- */
+  .two-col { display: flex; gap: 40px; align-items: flex-start; flex: 1; }
+  .two-col > * { flex: 1; min-width: 0; }
+
+  /* ---------- demo steps ---------- */
+  .demo-steps { counter-reset: step; list-style: none; padding-left: 0; }
+  .demo-steps li {
+    counter-increment: step;
+    padding-left: 40px;
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .demo-steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 0;
+    width: 28px; height: 28px;
+    background: var(--maroon); color: #fff;
+    border-radius: 50%; font-size: 15px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* final slide */
+  .final-slide {
+    background: var(--maroon);
+    color: #fff;
+    text-align: center;
+  }
+  .final-slide h1, .final-slide h2, .final-slide h3 { color: #fff; }
+</style>
+</head>
+<body>
+
+<div id="deck">
+  <div id="progress"></div>
+  <div id="counter"></div>
+
+  <!-- ==================== SLIDE 1: Title ==================== -->
+  <div class="slide title-slide">
+    <div style="margin-bottom: 30px;">
+      <span style="font-size:22px; opacity:0.8; letter-spacing:1px; text-transform:uppercase;">Lecture 36</span>
+    </div>
+    <h1 style="color:#fff; font-size:50px; margin-bottom:24px;">Putting It All Together<br>Agentic Biomedical AI</h1>
+    <div style="font-size:24px; opacity:0.9; margin-bottom: 36px;">
+      Theme 4: Agentic Systems &mdash; Building a Mini Claude Code (5/5)
+    </div>
+    <div style="font-size:19px; opacity:0.7;">
+      CSCI 3397 / PSYC 3317 &nbsp;|&nbsp; Spring 2026 &nbsp;|&nbsp; Donglai Wei
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 2: Housekeeping ==================== -->
+  <div class="slide">
+    <h2>Housekeeping</h2>
+    <h3 style="color:#555; font-weight:500; margin-bottom:20px;">Recap: What We Built in Lectures 32&ndash;35</h3>
+    <ul style="margin-bottom: 24px;">
+      <li><strong>Lec 32</strong> &mdash; LLM APIs &amp; the agency spectrum &rarr; <code>providers.py</code></li>
+      <li><strong>Lec 33</strong> &mdash; Tool use &amp; the agent loop &rarr; <code>tool_registry.py</code>, <code>agent.py</code></li>
+      <li><strong>Lec 34</strong> &mdash; File I/O, Bash, system prompts, compaction &rarr; <code>tools.py</code>, <code>context.py</code>, <code>compaction.py</code></li>
+      <li><strong>Lec 35</strong> &mdash; RAG, memory, multi-agent, MCP &rarr; <code>memory/</code>, <code>multi_agent/</code>, <code>mcp/</code></li>
+    </ul>
+    <div style="background:#fdf5f5; border-left:4px solid var(--maroon); padding:16px 20px; border-radius:0 8px 8px 0; margin-bottom: 18px;">
+      <strong>Today:</strong> Zoom out to the full system &mdash; see how the pieces fit, discuss clinical deployment, and do a live demo.
+    </div>
+    <p class="small" style="margin-top:8px;"><strong>Action items:</strong> PS4 due &nbsp;|&nbsp; Final project slides due</p>
+  </div>
+
+  <!-- ==================== SLIDE 3: Section — Full Architecture ==================== -->
+  <div class="slide section-slide">
+    <div class="section-number">Section 1</div>
+    <h2>The Full Architecture</h2>
+    <div class="section-subtitle">nano-claude-code &mdash; everything we built across 4 lectures</div>
+  </div>
+
+  <!-- ==================== SLIDE 4: Architecture Diagram ==================== -->
+  <div class="slide">
+    <h2>Full Architecture Diagram</h2>
+    <svg viewBox="0 0 1100 520" width="100%" style="margin-top: 4px;">
+      <defs>
+        <filter id="shadow1" x="-4%" y="-4%" width="108%" height="116%">
+          <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.12"/>
+        </filter>
+        <filter id="shadow2" x="-4%" y="-4%" width="108%" height="116%">
+          <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#000" flood-opacity="0.10"/>
+        </filter>
+      </defs>
+
+      <!-- Labels -->
+      <text x="16" y="58" font-size="13" fill="#999" font-weight="600" transform="rotate(-90,16,58)" text-anchor="end">REPL</text>
+      <text x="16" y="200" font-size="13" fill="#999" font-weight="600" transform="rotate(-90,16,200)" text-anchor="end">Core (~2,100 L)</text>
+      <text x="16" y="410" font-size="13" fill="#999" font-weight="600" transform="rotate(-90,16,410)" text-anchor="end">Extensions (~3,000 L)</text>
+
+      <!-- Top layer: REPL -->
+      <rect x="40" y="10" width="1020" height="80" rx="8" fill="#800000" filter="url(#shadow1)"/>
+      <text x="550" y="42" text-anchor="middle" fill="#fff" font-size="20" font-weight="700">REPL / UI</text>
+      <text x="550" y="66" text-anchor="middle" fill="#ffcccc" font-size="15">nano_claude.py &mdash; 1,985 lines &nbsp;|&nbsp; slash commands, streaming, permissions</text>
+
+      <!-- Arrow down -->
+      <line x1="550" y1="90" x2="550" y2="118" stroke="#800000" stroke-width="2.5" marker-end="url(#arrowM)"/>
+      <defs><marker id="arrowM" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#800000"/></marker></defs>
+
+      <!-- Core Agent Loop -->
+      <rect x="40" y="120" width="1020" height="72" rx="8" fill="#a52a2a" filter="url(#shadow1)"/>
+      <text x="550" y="153" text-anchor="middle" fill="#fff" font-size="19" font-weight="700">Core Agent Loop</text>
+      <text x="550" y="176" text-anchor="middle" fill="#ffcccc" font-size="14">agent.py &mdash; 179 lines &nbsp;|&nbsp; while LLM wants to call tools: execute them</text>
+
+      <!-- Arrows down from agent loop -->
+      <line x1="152" y1="192" x2="152" y2="220" stroke="#800000" stroke-width="2" marker-end="url(#arrowM)"/>
+      <line x1="370" y1="192" x2="370" y2="220" stroke="#800000" stroke-width="2" marker-end="url(#arrowM)"/>
+      <line x1="588" y1="192" x2="588" y2="220" stroke="#800000" stroke-width="2" marker-end="url(#arrowM)"/>
+      <line x1="806" y1="192" x2="806" y2="220" stroke="#800000" stroke-width="2" marker-end="url(#arrowM)"/>
+      <line x1="960" y1="192" x2="960" y2="220" stroke="#800000" stroke-width="2" marker-end="url(#arrowM)"/>
+
+      <!-- Middle layer: 5 core boxes -->
+      <!-- Providers -->
+      <rect x="60" y="222" width="185" height="80" rx="8" fill="#fff" stroke="#800000" stroke-width="2" filter="url(#shadow2)"/>
+      <text x="152" y="253" text-anchor="middle" fill="#800000" font-size="16" font-weight="700">Providers</text>
+      <text x="152" y="275" text-anchor="middle" fill="#666" font-size="13">618 lines</text>
+      <text x="152" y="292" text-anchor="middle" fill="#999" font-size="12">Claude, GPT, Ollama</text>
+
+      <!-- Tool Registry -->
+      <rect x="278" y="222" width="185" height="80" rx="8" fill="#fff" stroke="#800000" stroke-width="2" filter="url(#shadow2)"/>
+      <text x="370" y="253" text-anchor="middle" fill="#800000" font-size="16" font-weight="700">Tool Registry</text>
+      <text x="370" y="275" text-anchor="middle" fill="#666" font-size="13">98 lines</text>
+      <text x="370" y="292" text-anchor="middle" fill="#999" font-size="12">dispatch &amp; validation</text>
+
+      <!-- Context -->
+      <rect x="496" y="222" width="185" height="80" rx="8" fill="#fff" stroke="#800000" stroke-width="2" filter="url(#shadow2)"/>
+      <text x="588" y="253" text-anchor="middle" fill="#800000" font-size="16" font-weight="700">Context Builder</text>
+      <text x="588" y="275" text-anchor="middle" fill="#666" font-size="13">165 lines</text>
+      <text x="588" y="292" text-anchor="middle" fill="#999" font-size="12">system prompt assembly</text>
+
+      <!-- Compaction -->
+      <rect x="714" y="222" width="185" height="80" rx="8" fill="#fff" stroke="#800000" stroke-width="2" filter="url(#shadow2)"/>
+      <text x="806" y="253" text-anchor="middle" fill="#800000" font-size="16" font-weight="700">Compaction</text>
+      <text x="806" y="275" text-anchor="middle" fill="#666" font-size="13">196 lines</text>
+      <text x="806" y="292" text-anchor="middle" fill="#999" font-size="12">summarize old context</text>
+
+      <!-- Tools -->
+      <rect x="910" y="222" width="100" height="80" rx="8" fill="#fff" stroke="#800000" stroke-width="2" filter="url(#shadow2)"/>
+      <text x="960" y="253" text-anchor="middle" fill="#800000" font-size="16" font-weight="700">Tools</text>
+      <text x="960" y="275" text-anchor="middle" fill="#666" font-size="13">1,064 L</text>
+      <text x="960" y="292" text-anchor="middle" fill="#999" font-size="12">R/W/E/Bash</text>
+
+      <!-- Arrows down to extensions -->
+      <line x1="152" y1="302" x2="152" y2="340" stroke="#999" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowG)"/>
+      <line x1="370" y1="302" x2="370" y2="340" stroke="#999" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowG)"/>
+      <line x1="588" y1="302" x2="588" y2="340" stroke="#999" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowG)"/>
+      <line x1="806" y1="302" x2="806" y2="340" stroke="#999" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowG)"/>
+      <line x1="960" y1="302" x2="960" y2="340" stroke="#999" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowG)"/>
+      <defs><marker id="arrowG" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#999"/></marker></defs>
+
+      <!-- Extension layer -->
+      <rect x="60" y="342" width="185" height="80" rx="8" fill="#f9f2f2" stroke="#c08080" stroke-width="1.5" filter="url(#shadow2)"/>
+      <text x="152" y="373" text-anchor="middle" fill="#800000" font-size="15" font-weight="600">Memory</text>
+      <text x="152" y="393" text-anchor="middle" fill="#888" font-size="12">5 modules</text>
+      <text x="152" y="410" text-anchor="middle" fill="#999" font-size="11">persist &amp; search</text>
+
+      <rect x="278" y="342" width="185" height="80" rx="8" fill="#f9f2f2" stroke="#c08080" stroke-width="1.5" filter="url(#shadow2)"/>
+      <text x="370" y="373" text-anchor="middle" fill="#800000" font-size="15" font-weight="600">Multi-Agent</text>
+      <text x="370" y="393" text-anchor="middle" fill="#888" font-size="12">thread pool</text>
+      <text x="370" y="410" text-anchor="middle" fill="#999" font-size="11">parallel sub-agents</text>
+
+      <rect x="496" y="342" width="185" height="80" rx="8" fill="#f9f2f2" stroke="#c08080" stroke-width="1.5" filter="url(#shadow2)"/>
+      <text x="588" y="373" text-anchor="middle" fill="#800000" font-size="15" font-weight="600">MCP</text>
+      <text x="588" y="393" text-anchor="middle" fill="#888" font-size="12">4 modules</text>
+      <text x="588" y="410" text-anchor="middle" fill="#999" font-size="11">JSON-RPC protocol</text>
+
+      <rect x="714" y="342" width="185" height="80" rx="8" fill="#f9f2f2" stroke="#c08080" stroke-width="1.5" filter="url(#shadow2)"/>
+      <text x="806" y="373" text-anchor="middle" fill="#800000" font-size="15" font-weight="600">Skills</text>
+      <text x="806" y="393" text-anchor="middle" fill="#888" font-size="12">Markdown templates</text>
+      <text x="806" y="410" text-anchor="middle" fill="#999" font-size="11">reusable prompts</text>
+
+      <rect x="910" y="342" width="100" height="80" rx="8" fill="#f9f2f2" stroke="#c08080" stroke-width="1.5" filter="url(#shadow2)"/>
+      <text x="960" y="373" text-anchor="middle" fill="#800000" font-size="15" font-weight="600">Plugins</text>
+      <text x="960" y="393" text-anchor="middle" fill="#888" font-size="12">runtime</text>
+      <text x="960" y="410" text-anchor="middle" fill="#999" font-size="11">extensible</text>
+
+      <!-- Bottom annotation -->
+      <text x="550" y="460" text-anchor="middle" fill="#800000" font-size="14" font-weight="600">~5,000 lines of Python &nbsp;&mdash;&nbsp; vs. Claude Code's ~283K lines of TypeScript</text>
+
+      <!-- Bracket labels -->
+      <rect x="40" y="480" width="490" height="28" rx="4" fill="#800000" opacity="0.08"/>
+      <text x="285" y="500" text-anchor="middle" fill="#800000" font-size="13" font-weight="600">Core: ~2,100 lines (Lec 32&ndash;34)</text>
+      <rect x="540" y="480" width="480" height="28" rx="4" fill="#800000" opacity="0.08"/>
+      <text x="780" y="500" text-anchor="middle" fill="#800000" font-size="13" font-weight="600">Extensions: ~3,000 lines (Lec 35)</text>
+    </svg>
+  </div>
+
+  <!-- ==================== SLIDE 5: REPL & Skills ==================== -->
+  <div class="slide">
+    <h2>The REPL, Skills &amp; Plugins</h2>
+    <div class="two-col">
+      <div>
+        <h3 style="font-size:22px;">The REPL (<code>nano_claude.py</code>)</h3>
+        <ul style="font-size:20px;">
+          <li>Interactive loop: read input &rarr; run agent &rarr; stream output</li>
+          <li>Slash commands: <code>/model</code>, <code>/config</code>, <code>/memory</code>, <code>/save</code>, <code>/load</code>, <code>/tasks</code></li>
+          <li>Permission prompts for writes &amp; commands</li>
+          <li>Rich Markdown rendering with syntax highlighting</li>
+        </ul>
+        <h3 style="font-size:22px; margin-top:22px;">Plugins</h3>
+        <ul style="font-size:20px;">
+          <li>Install from git or local path</li>
+          <li>Each provides <code>tools.py</code> registering new tools</li>
+          <li>Example: <code>dicom-tools</code> &rarr; <code>ReadDICOM</code>, <code>ExtractMetadata</code>, <code>WindowLevel</code></li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="font-size:22px;">Skills &mdash; Reusable Prompt Templates</h3>
+        <div style="background:var(--code-bg); border:1px solid var(--code-border); border-radius:8px; padding:16px; font-family:'SF Mono','Fira Code',Consolas,monospace; font-size:15px; line-height:1.5; white-space:pre; margin-bottom:14px;">---
+name: commit
+description: Create a conventional commit
+triggers: ["/commit"]
+tools: [Bash, Read]
+---
+Look at staged changes with
+`git diff --cached`,
+write a commit message...</div>
+        <p style="font-size:19px;"><code>/commit</code> &rarr; loads the skill prompt &rarr; runs through agent loop</p>
+        <p style="font-size:19px; margin-top:10px; color:var(--maroon); font-weight:600;">Biomedical example:</p>
+        <p style="font-size:19px;"><code>/analyze-slide</code> &mdash; runs a standard cell counting + morphometry pipeline</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 6: Section — Agent Landscape ==================== -->
+  <div class="slide section-slide">
+    <div class="section-number">Section 2</div>
+    <h2>The Agent Landscape</h2>
+    <div class="section-subtitle">Where does nano-claude-code fit among modern agent frameworks?</div>
+  </div>
+
+  <!-- ==================== SLIDE 7: Agent Landscape Scatter ==================== -->
+  <div class="slide">
+    <h2>The Agent Landscape</h2>
+    <svg viewBox="0 0 1100 500" width="100%">
+      <defs>
+        <filter id="bshadow" x="-10%" y="-10%" width="120%" height="130%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.12"/>
+        </filter>
+      </defs>
+
+      <!-- Axes -->
+      <line x1="100" y1="440" x2="1060" y2="440" stroke="#ccc" stroke-width="2"/>
+      <line x1="100" y1="440" x2="100" y2="40" stroke="#ccc" stroke-width="2"/>
+      <!-- Arrows -->
+      <polygon points="1060,440 1045,434 1045,446" fill="#999"/>
+      <polygon points="100,40 94,55 106,55" fill="#999"/>
+      <!-- Labels -->
+      <text x="580" y="485" text-anchor="middle" fill="#666" font-size="16" font-weight="600">Flexibility / Agency &rarr;</text>
+      <text x="50" y="240" text-anchor="middle" fill="#666" font-size="16" font-weight="600" transform="rotate(-90,50,240)">Complexity &uarr;</text>
+
+      <!-- Bubbles -->
+      <!-- LangChain Chains -->
+      <circle cx="220" cy="340" r="44" fill="#4a90d9" opacity="0.18" filter="url(#bshadow)"/>
+      <circle cx="220" cy="340" r="44" fill="none" stroke="#4a90d9" stroke-width="2"/>
+      <text x="220" y="336" text-anchor="middle" fill="#2a5a8a" font-size="13" font-weight="600">LangChain</text>
+      <text x="220" y="354" text-anchor="middle" fill="#2a5a8a" font-size="13" font-weight="600">Chains</text>
+
+      <!-- smolagents -->
+      <circle cx="350" cy="310" r="40" fill="#28a745" opacity="0.18" filter="url(#bshadow)"/>
+      <circle cx="350" cy="310" r="40" fill="none" stroke="#28a745" stroke-width="2"/>
+      <text x="350" y="314" text-anchor="middle" fill="#1a6b2c" font-size="13" font-weight="600">smolagents</text>
+
+      <!-- OpenAI Agents SDK -->
+      <circle cx="480" cy="260" r="46" fill="#f5a623" opacity="0.18" filter="url(#bshadow)"/>
+      <circle cx="480" cy="260" r="46" fill="none" stroke="#f5a623" stroke-width="2"/>
+      <text x="480" y="254" text-anchor="middle" fill="#9a6800" font-size="13" font-weight="600">OpenAI</text>
+      <text x="480" y="272" text-anchor="middle" fill="#9a6800" font-size="13" font-weight="600">Agents SDK</text>
+
+      <!-- LangGraph -->
+      <circle cx="390" cy="170" r="42" fill="#7b61ff" opacity="0.18" filter="url(#bshadow)"/>
+      <circle cx="390" cy="170" r="42" fill="none" stroke="#7b61ff" stroke-width="2"/>
+      <text x="390" y="174" text-anchor="middle" fill="#4a3a99" font-size="13" font-weight="600">LangGraph</text>
+
+      <!-- CrewAI -->
+      <circle cx="530" cy="140" r="40" fill="#e74c3c" opacity="0.18" filter="url(#bshadow)"/>
+      <circle cx="530" cy="140" r="40" fill="none" stroke="#e74c3c" stroke-width="2"/>
+      <text x="530" y="144" text-anchor="middle" fill="#a5281b" font-size="13" font-weight="600">CrewAI</text>
+
+      <!-- nano-claude-code (highlighted) -->
+      <circle cx="670" cy="290" r="52" fill="#800000" opacity="0.12" filter="url(#bshadow)"/>
+      <circle cx="670" cy="290" r="52" fill="none" stroke="#800000" stroke-width="3" stroke-dasharray="8,4"/>
+      <text x="670" y="280" text-anchor="middle" fill="#800000" font-size="14" font-weight="700">nano-claude</text>
+      <text x="670" y="298" text-anchor="middle" fill="#800000" font-size="14" font-weight="700">-code</text>
+      <text x="670" y="320" text-anchor="middle" fill="#800000" font-size="12" font-style="italic">We built this!</text>
+
+      <!-- Claude Code -->
+      <circle cx="820" cy="180" r="50" fill="#800000" opacity="0.18" filter="url(#bshadow)"/>
+      <circle cx="820" cy="180" r="50" fill="none" stroke="#800000" stroke-width="2"/>
+      <text x="820" y="175" text-anchor="middle" fill="#800000" font-size="14" font-weight="600">Claude</text>
+      <text x="820" y="195" text-anchor="middle" fill="#800000" font-size="14" font-weight="600">Code</text>
+
+      <!-- Cursor -->
+      <circle cx="880" cy="100" r="42" fill="#0ea5e9" opacity="0.18" filter="url(#bshadow)"/>
+      <circle cx="880" cy="100" r="42" fill="none" stroke="#0ea5e9" stroke-width="2"/>
+      <text x="880" y="104" text-anchor="middle" fill="#0774a8" font-size="14" font-weight="600">Cursor</text>
+
+      <!-- Devin -->
+      <circle cx="990" cy="80" r="46" fill="#8b5cf6" opacity="0.18" filter="url(#bshadow)"/>
+      <circle cx="990" cy="80" r="46" fill="none" stroke="#8b5cf6" stroke-width="2"/>
+      <text x="990" y="84" text-anchor="middle" fill="#5b33c6" font-size="14" font-weight="600">Devin</text>
+
+      <!-- Connecting line from nano to Claude Code -->
+      <line x1="718" y1="272" x2="774" y2="202" stroke="#800000" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.4"/>
+    </svg>
+  </div>
+
+  <!-- ==================== SLIDE 8: Architectural Approaches ==================== -->
+  <div class="slide">
+    <h2>Key Architectural Approaches</h2>
+    <div style="display:flex; gap:24px; margin-top:10px;">
+      <!-- JSON tool calling -->
+      <div style="flex:1; background:var(--code-bg); border-radius:12px; padding:24px; border-top:4px solid #4a90d9;">
+        <h3 style="color:#4a90d9; font-size:21px; margin-bottom:10px;">JSON Tool Calling</h3>
+        <p style="font-size:17px; margin-bottom:10px;">LLM outputs JSON &rarr; parse &rarr; execute</p>
+        <ul style="font-size:17px; padding-left:20px;">
+          <li>OpenAI, LangChain</li>
+          <li>Safe, easy to validate</li>
+          <li>Limited composability</li>
+        </ul>
+      </div>
+      <!-- Code agents -->
+      <div style="flex:1; background:#fdf5f5; border-radius:12px; padding:24px; border-top:4px solid #800000;">
+        <h3 style="color:#800000; font-size:21px; margin-bottom:10px;">Code Agents</h3>
+        <p style="font-size:17px; margin-bottom:10px;">LLM writes executable code directly</p>
+        <ul style="font-size:17px; padding-left:20px;">
+          <li>smolagents, Claude Code</li>
+          <li>More flexible &amp; composable</li>
+          <li>Needs sandboxing</li>
+        </ul>
+      </div>
+      <!-- Graph-based -->
+      <div style="flex:1; background:#f5f0ff; border-radius:12px; padding:24px; border-top:4px solid #7b61ff;">
+        <h3 style="color:#7b61ff; font-size:21px; margin-bottom:10px;">Graph-Based</h3>
+        <p style="font-size:17px; margin-bottom:10px;">Predefined state machine + LLM at nodes</p>
+        <ul style="font-size:17px; padding-left:20px;">
+          <li>LangGraph</li>
+          <li>More predictable</li>
+          <li>Less flexible</li>
+        </ul>
+      </div>
+    </div>
+    <div style="background:#fff8e1; border-left:4px solid #f5a623; padding:16px 20px; border-radius:0 8px 8px 0; margin-top:24px;">
+      <strong style="color:#9a6800;">The Trade-Off:</strong> More agency = more capability but less predictability. For clinical use, find the right balance.
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 9: Section — Deploying ==================== -->
+  <div class="slide section-slide">
+    <div class="section-number">Section 3</div>
+    <h2>Deploying Biomedical AI Agents</h2>
+    <div class="section-subtitle">From prototype to product &mdash; regulatory, privacy, and operational concerns</div>
+  </div>
+
+  <!-- ==================== SLIDE 10: Deployment Stack ==================== -->
+  <div class="slide">
+    <h2>The Deployment Stack</h2>
+    <svg viewBox="0 0 1100 480" width="100%">
+      <defs>
+        <filter id="lshadow" x="-2%" y="-4%" width="104%" height="116%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.10"/>
+        </filter>
+      </defs>
+
+      <!-- Layer 1: User Interface -->
+      <rect x="120" y="20" width="860" height="72" rx="8" fill="#3b82f6" filter="url(#lshadow)"/>
+      <text x="200" y="55" fill="#fff" font-size="20" font-weight="700">User Interface</text>
+      <text x="200" y="76" fill="#dbeafe" font-size="14">Web app, CLI, EHR integration</text>
+      <rect x="140" y="36" width="36" height="36" rx="6" fill="#2563eb"/>
+      <text x="158" y="60" text-anchor="middle" fill="#fff" font-size="18">UI</text>
+
+      <!-- Arrow -->
+      <line x1="550" y1="92" x2="550" y2="108" stroke="#aaa" stroke-width="2" marker-end="url(#arrowDown)"/>
+      <defs><marker id="arrowDown" markerWidth="8" markerHeight="6" refX="4" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#aaa"/></marker></defs>
+
+      <!-- Layer 2: Agent Orchestration -->
+      <rect x="120" y="110" width="860" height="72" rx="8" fill="#800000" filter="url(#lshadow)"/>
+      <text x="200" y="145" fill="#fff" font-size="20" font-weight="700">Agent Orchestration</text>
+      <text x="200" y="166" fill="#ffcccc" font-size="14">Our agent loop &mdash; tool dispatch, context management, compaction</text>
+      <rect x="140" y="126" width="36" height="36" rx="6" fill="#600000"/>
+      <text x="158" y="149" text-anchor="middle" fill="#fff" font-size="16">&#x2699;</text>
+
+      <!-- Arrow -->
+      <line x1="550" y1="182" x2="550" y2="198" stroke="#aaa" stroke-width="2" marker-end="url(#arrowDown)"/>
+
+      <!-- Layer 3: LLM Provider -->
+      <rect x="120" y="200" width="860" height="72" rx="8" fill="#16a34a" filter="url(#lshadow)"/>
+      <text x="200" y="235" fill="#fff" font-size="20" font-weight="700">LLM Provider</text>
+      <text x="200" y="256" fill="#dcfce7" font-size="14">Claude API, Azure OpenAI, local Ollama</text>
+      <rect x="140" y="216" width="36" height="36" rx="6" fill="#0f7a34"/>
+      <text x="158" y="240" text-anchor="middle" fill="#fff" font-size="16">&#x1F9E0;</text>
+
+      <!-- Arrow -->
+      <line x1="550" y1="272" x2="550" y2="288" stroke="#aaa" stroke-width="2" marker-end="url(#arrowDown)"/>
+
+      <!-- Layer 4: Tools & Data -->
+      <rect x="120" y="290" width="860" height="72" rx="8" fill="#ea580c" filter="url(#lshadow)"/>
+      <text x="200" y="325" fill="#fff" font-size="20" font-weight="700">Tools &amp; Data Sources</text>
+      <text x="200" y="346" fill="#fed7aa" font-size="14">PACS, EHR, lab systems via MCP</text>
+      <rect x="140" y="306" width="36" height="36" rx="6" fill="#c2410c"/>
+      <text x="158" y="330" text-anchor="middle" fill="#fff" font-size="16">&#x1F527;</text>
+
+      <!-- Arrow -->
+      <line x1="550" y1="362" x2="550" y2="378" stroke="#aaa" stroke-width="2" marker-end="url(#arrowDown)"/>
+
+      <!-- Layer 5: Infrastructure -->
+      <rect x="120" y="380" width="860" height="72" rx="8" fill="#6b7280" filter="url(#lshadow)"/>
+      <text x="200" y="415" fill="#fff" font-size="20" font-weight="700">Infrastructure</text>
+      <text x="200" y="436" fill="#e5e7eb" font-size="14">Cloud / on-prem, GPU for local models, networking</text>
+      <rect x="140" y="396" width="36" height="36" rx="6" fill="#4b5563"/>
+      <text x="158" y="420" text-anchor="middle" fill="#fff" font-size="16">&#x2601;</text>
+    </svg>
+  </div>
+
+  <!-- ==================== SLIDE 11: FDA SaMD Classification ==================== -->
+  <div class="slide">
+    <h2>FDA Software as Medical Device (SaMD)</h2>
+    <p style="margin-bottom:18px;">If the agent makes or influences clinical decisions, it may be classified as SaMD.</p>
+    <svg viewBox="0 0 1100 340" width="100%">
+      <defs>
+        <filter id="cshadow" x="-3%" y="-5%" width="106%" height="118%">
+          <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.12"/>
+        </filter>
+      </defs>
+
+      <!-- Class I -->
+      <rect x="40" y="30" width="310" height="200" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.5" filter="url(#cshadow)"/>
+      <rect x="40" y="30" width="310" height="48" rx="12" fill="#16a34a"/>
+      <rect x="40" y="58" width="310" height="20" fill="#16a34a"/>
+      <text x="195" y="62" text-anchor="middle" fill="#fff" font-size="22" font-weight="700">Class I</text>
+      <text x="195" y="110" text-anchor="middle" fill="#16a34a" font-size="28" font-weight="700">Low Risk</text>
+      <text x="195" y="145" text-anchor="middle" fill="#555" font-size="16">Documentation tools,</text>
+      <text x="195" y="167" text-anchor="middle" fill="#555" font-size="16">formatting, display</text>
+      <text x="195" y="210" text-anchor="middle" fill="#888" font-size="15" font-style="italic">Minimal oversight</text>
+
+      <!-- Class II -->
+      <rect x="395" y="30" width="310" height="200" rx="12" fill="#fff7ed" stroke="#ea580c" stroke-width="2.5" filter="url(#cshadow)"/>
+      <rect x="395" y="30" width="310" height="48" rx="12" fill="#ea580c"/>
+      <rect x="395" y="58" width="310" height="20" fill="#ea580c"/>
+      <text x="550" y="62" text-anchor="middle" fill="#fff" font-size="22" font-weight="700">Class II</text>
+      <text x="550" y="110" text-anchor="middle" fill="#ea580c" font-size="28" font-weight="700">Moderate Risk</text>
+      <text x="550" y="145" text-anchor="middle" fill="#555" font-size="16">Screening aids,</text>
+      <text x="550" y="167" text-anchor="middle" fill="#555" font-size="16">measurement tools</text>
+      <text x="550" y="210" text-anchor="middle" fill="#888" font-size="15" font-style="italic">510(k) clearance</text>
+
+      <!-- Class III -->
+      <rect x="750" y="30" width="310" height="200" rx="12" fill="#fef2f2" stroke="#dc2626" stroke-width="2.5" filter="url(#cshadow)"/>
+      <rect x="750" y="30" width="310" height="48" rx="12" fill="#dc2626"/>
+      <rect x="750" y="58" width="310" height="20" fill="#dc2626"/>
+      <text x="905" y="62" text-anchor="middle" fill="#fff" font-size="22" font-weight="700">Class III</text>
+      <text x="905" y="110" text-anchor="middle" fill="#dc2626" font-size="28" font-weight="700">High Risk</text>
+      <text x="905" y="145" text-anchor="middle" fill="#555" font-size="16">Autonomous diagnosis,</text>
+      <text x="905" y="167" text-anchor="middle" fill="#555" font-size="16">treatment decisions</text>
+      <text x="905" y="210" text-anchor="middle" fill="#888" font-size="15" font-style="italic">Premarket Approval (PMA)</text>
+
+      <!-- Arrow -->
+      <line x1="80" y1="270" x2="1020" y2="270" stroke="#999" stroke-width="2" marker-end="url(#arrowRight)"/>
+      <defs><marker id="arrowRight" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#999"/></marker></defs>
+      <text x="550" y="300" text-anchor="middle" fill="#666" font-size="16" font-weight="600">Increasing Regulatory Burden &rarr;</text>
+
+      <!-- Key question -->
+      <text x="550" y="335" text-anchor="middle" fill="#800000" font-size="15" font-weight="600">Most viable path: human-in-the-loop &mdash; agent proposes, clinician confirms</text>
+    </svg>
+  </div>
+
+  <!-- ==================== SLIDE 12: HIPAA ==================== -->
+  <div class="slide">
+    <h2>HIPAA &amp; Patient Privacy</h2>
+    <div class="two-col">
+      <div>
+        <h3 style="font-size:21px;">Protected Health Information (PHI)</h3>
+        <ul style="font-size:19px; margin-bottom:18px;">
+          <li>Patient names, dates, MRNs</li>
+          <li>Images with embedded metadata</li>
+          <li><strong>Cloud API risk:</strong> sending PHI to Claude/GPT APIs may violate HIPAA without a BAA</li>
+        </ul>
+        <h3 style="font-size:21px;">Solutions</h3>
+        <ul style="font-size:19px;">
+          <li>Use API providers with <strong>BAA</strong> (Anthropic, Azure OpenAI, AWS Bedrock)</li>
+          <li><strong>De-identify</strong> data before sending to the API</li>
+          <li>Run <strong>local models</strong> (Ollama, vLLM) on hospital infrastructure &mdash; no data leaves the network</li>
+        </ul>
+      </div>
+      <div>
+        <div style="background:#f0fdf4; border:2px solid #16a34a; border-radius:12px; padding:24px; margin-bottom:18px;">
+          <h3 style="color:#16a34a; font-size:19px; margin-bottom:8px;">Our Architecture Supports This</h3>
+          <p style="font-size:18px;"><code>providers.py</code> abstracts over cloud and local models.</p>
+          <p style="font-size:18px; margin-top:8px;">Switch from Claude to Ollama with <strong>one config change</strong>.</p>
+        </div>
+        <div style="background:#fdf5f5; border:2px solid var(--maroon); border-radius:12px; padding:24px;">
+          <h3 style="color:var(--maroon); font-size:19px; margin-bottom:8px;">Permission Model in Production</h3>
+          <ul style="font-size:17px; padding-left:18px;">
+            <li><code>auto</code> &mdash; routine analyses (cell counting)</li>
+            <li><code>manual</code> &mdash; modifies records or reports</li>
+            <li><strong>Never</strong> <code>accept-all</code> in production</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 13: Latency, Cost & Monitoring ==================== -->
+  <div class="slide">
+    <h2>Latency, Cost &amp; Monitoring</h2>
+    <div class="two-col" style="align-items:stretch;">
+      <div>
+        <h3 style="font-size:21px;">Latency &amp; Cost</h3>
+        <p style="font-size:18px; margin-bottom:12px;">Agent loops involve multiple API calls. A 5-step analysis = 5 round trips.</p>
+        <ul style="font-size:18px; margin-bottom:18px;">
+          <li><strong>Faster models for simple steps</strong> &mdash; Haiku for file reading, Opus for reasoning</li>
+          <li><strong>Cache</strong> common queries (RAG results, tool outputs)</li>
+          <li><strong>Parallelize</strong> independent tool calls</li>
+          <li><strong>Pre-compute</strong> embeddings for literature DB</li>
+        </ul>
+        <div style="background:var(--code-bg); border-radius:8px; padding:14px 18px; border:1px solid var(--code-border);">
+          <p style="font-size:17px;"><strong>Typical cost:</strong> $0.01 &ndash; $0.10 per analysis<br><span class="small">(depending on model and complexity)</span></p>
+        </div>
+      </div>
+      <div>
+        <h3 style="font-size:21px;">Monitoring &amp; Reliability</h3>
+        <p style="font-size:18px; margin-bottom:12px;"><strong>Log everything:</strong> tool calls, LLM responses, user interactions</p>
+        <p style="font-size:18px; margin-bottom:6px; font-weight:600; color:var(--maroon);">Track:</p>
+        <ul style="font-size:18px; margin-bottom:14px;">
+          <li>Token usage &amp; latency per step</li>
+          <li>Error rates &amp; user approval/rejection</li>
+        </ul>
+        <p style="font-size:18px; margin-bottom:6px; font-weight:600; color:var(--maroon);">Alert on:</p>
+        <ul style="font-size:18px; margin-bottom:14px;">
+          <li>Repeated tool failures</li>
+          <li>Context window exhaustion</li>
+          <li>Unexpected tool calls</li>
+        </ul>
+        <p style="font-size:18px;"><strong>Drift detection:</strong> Compare outputs against a validation set when models or prompts change.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 14: Section — Live Demo ==================== -->
+  <div class="slide section-slide">
+    <div class="section-number">Section 4</div>
+    <h2>Live Demo</h2>
+    <div class="section-subtitle">End-to-end biomedical analysis with nano-claude-code</div>
+  </div>
+
+  <!-- ==================== SLIDE 15: Demo Walkthrough ==================== -->
+  <div class="slide">
+    <h2>Demo: Kidney Biopsy Cohort Analysis</h2>
+    <p style="margin-bottom:16px; font-size:19px; color:#555;">"Analyze this kidney biopsy cohort &mdash; count glomeruli, measure areas, search literature, generate report."</p>
+    <div class="two-col" style="align-items:flex-start;">
+      <div>
+        <ol class="demo-steps" style="font-size:18px;">
+          <li>Reads <code>MEMORY.md</code> &rarr; recalls kidney biopsy project, Otsu thresholding, 20x magnification</li>
+          <li>Calls <code>Glob("slides/*.tiff")</code> &rarr; finds 10 slides</li>
+          <li>Writes <code>count_glomeruli.py</code> using scikit-image (watershed segmentation)</li>
+          <li>Calls <code>Bash("python count_glomeruli.py")</code> &rarr; counts &amp; areas</li>
+          <li>Calls <code>SearchLiterature()</code> &rarr; retrieves 3 papers on normal ranges</li>
+          <li>Writes final Markdown report: per-slide table, literature comparison, flagged abnormalities</li>
+          <li>Calls <code>MemorySave</code> to record analysis parameters for future sessions</li>
+        </ol>
+      </div>
+      <div>
+        <h3 style="font-size:19px;">Components in Action</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">
+          <span style="background:#800000; color:#fff; padding:6px 14px; border-radius:20px; font-size:15px; font-weight:600;">Providers</span>
+          <span style="background:#800000; color:#fff; padding:6px 14px; border-radius:20px; font-size:15px; font-weight:600;">Agent Loop</span>
+          <span style="background:#800000; color:#fff; padding:6px 14px; border-radius:20px; font-size:15px; font-weight:600;">Tools</span>
+          <span style="background:#800000; color:#fff; padding:6px 14px; border-radius:20px; font-size:15px; font-weight:600;">Compaction</span>
+          <span style="background:#800000; color:#fff; padding:6px 14px; border-radius:20px; font-size:15px; font-weight:600;">Memory</span>
+          <span style="background:#800000; color:#fff; padding:6px 14px; border-radius:20px; font-size:15px; font-weight:600;">RAG</span>
+        </div>
+        <div style="background:var(--code-bg); border:1px solid var(--code-border); border-radius:8px; padding:16px; font-family:monospace; font-size:14px; line-height:1.6; margin-top:16px; white-space:pre;">$ nano-claude
+
+> Analyze the kidney biopsy
+  cohort in slides/
+
+<span style="color:#800000;">Agent</span>: Reading MEMORY.md...
+<span style="color:#800000;">Agent</span>: Found 10 slides.
+<span style="color:#800000;">Agent</span>: Writing analysis script...
+<span style="color:#16a34a;">[Tool]</span> Bash: python count_glom...
+<span style="color:#16a34a;">[Tool]</span> SearchLiterature: ...
+<span style="color:#800000;">Agent</span>: Report saved to
+  report.md</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 16: What We Built ==================== -->
+  <div class="slide">
+    <h2>What We Built in 5 Lectures</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Lecture</th>
+          <th>Component</th>
+          <th>Lines</th>
+          <th>What It Does</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>32</strong></td>
+          <td><code>providers.py</code></td>
+          <td>618</td>
+          <td>Talk to LLMs (any provider)</td>
+        </tr>
+        <tr>
+          <td><strong>33</strong></td>
+          <td><code>agent.py</code> + <code>tool_registry.py</code></td>
+          <td>277</td>
+          <td>The core loop + tool dispatch</td>
+        </tr>
+        <tr>
+          <td><strong>34</strong></td>
+          <td><code>tools.py</code> + <code>context.py</code> + <code>compaction.py</code></td>
+          <td>1,425</td>
+          <td>Real tools + smart prompts + memory management</td>
+        </tr>
+        <tr>
+          <td><strong>35</strong></td>
+          <td><code>memory/</code> + <code>multi_agent/</code> + <code>mcp/</code></td>
+          <td>~3,000</td>
+          <td>Persistence + parallelism + external systems</td>
+        </tr>
+        <tr>
+          <td><strong>36</strong></td>
+          <td>Full system</td>
+          <td>~5,000</td>
+          <td>Complete coding agent</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:24px; background:#fdf5f5; border-left:4px solid var(--maroon); padding:16px 20px; border-radius:0 8px 8px 0;">
+      <p style="font-size:20px;"><strong>Key Takeaway:</strong> An AI agent is not magic &mdash; it's a <code>while</code> loop, a tool registry, and a good system prompt. Understanding the architecture demystifies tools like Claude Code and empowers you to build domain-specific agents for any biomedical workflow.</p>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 17: Course Arc ==================== -->
+  <div class="slide">
+    <h2>The Arc of the Course</h2>
+    <svg viewBox="0 0 1100 400" width="100%">
+      <defs>
+        <filter id="ashadow" x="-3%" y="-5%" width="106%" height="118%">
+          <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.12"/>
+        </filter>
+        <marker id="arrowArc" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#999"/>
+        </marker>
+      </defs>
+
+      <!-- Box 1: Image Processing -->
+      <rect x="30" y="40" width="230" height="200" rx="12" fill="#eff6ff" stroke="#3b82f6" stroke-width="2.5" filter="url(#ashadow)"/>
+      <rect x="30" y="40" width="230" height="50" rx="12" fill="#3b82f6"/>
+      <rect x="30" y="70" width="230" height="20" fill="#3b82f6"/>
+      <text x="145" y="73" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">Weeks 1&ndash;4</text>
+      <text x="145" y="125" text-anchor="middle" fill="#3b82f6" font-size="22" font-weight="700">Image</text>
+      <text x="145" y="152" text-anchor="middle" fill="#3b82f6" font-size="22" font-weight="700">Processing</text>
+      <text x="145" y="190" text-anchor="middle" fill="#666" font-size="18" font-style="italic">"Pixels"</text>
+      <text x="145" y="218" text-anchor="middle" fill="#999" font-size="13">How to manipulate pixels</text>
+
+      <!-- Arrow 1->2 -->
+      <line x1="264" y1="140" x2="296" y2="140" stroke="#999" stroke-width="2.5" marker-end="url(#arrowArc)"/>
+
+      <!-- Box 2: Deep Learning -->
+      <rect x="300" y="40" width="230" height="200" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.5" filter="url(#ashadow)"/>
+      <rect x="300" y="40" width="230" height="50" rx="12" fill="#16a34a"/>
+      <rect x="300" y="70" width="230" height="20" fill="#16a34a"/>
+      <text x="415" y="73" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">Weeks 5&ndash;10</text>
+      <text x="415" y="125" text-anchor="middle" fill="#16a34a" font-size="22" font-weight="700">Deep</text>
+      <text x="415" y="152" text-anchor="middle" fill="#16a34a" font-size="22" font-weight="700">Learning</text>
+      <text x="415" y="190" text-anchor="middle" fill="#666" font-size="18" font-style="italic">"Features"</text>
+      <text x="415" y="218" text-anchor="middle" fill="#999" font-size="13">How to learn from pixels</text>
+
+      <!-- Arrow 2->3 -->
+      <line x1="534" y1="140" x2="566" y2="140" stroke="#999" stroke-width="2.5" marker-end="url(#arrowArc)"/>
+
+      <!-- Box 3: Foundation Models -->
+      <rect x="570" y="40" width="230" height="200" rx="12" fill="#fff7ed" stroke="#ea580c" stroke-width="2.5" filter="url(#ashadow)"/>
+      <rect x="570" y="40" width="230" height="50" rx="12" fill="#ea580c"/>
+      <rect x="570" y="70" width="230" height="20" fill="#ea580c"/>
+      <text x="685" y="73" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">Weeks 11&ndash;13</text>
+      <text x="685" y="125" text-anchor="middle" fill="#ea580c" font-size="22" font-weight="700">Foundation</text>
+      <text x="685" y="152" text-anchor="middle" fill="#ea580c" font-size="22" font-weight="700">Models</text>
+      <text x="685" y="190" text-anchor="middle" fill="#666" font-size="18" font-style="italic">"Knowledge"</text>
+      <text x="685" y="218" text-anchor="middle" fill="#999" font-size="13">How to leverage pretrained knowledge</text>
+
+      <!-- Arrow 3->4 -->
+      <line x1="804" y1="140" x2="836" y2="140" stroke="#999" stroke-width="2.5" marker-end="url(#arrowArc)"/>
+
+      <!-- Box 4: Agentic Systems -->
+      <rect x="840" y="40" width="230" height="200" rx="12" fill="#fdf5f5" stroke="#800000" stroke-width="3" filter="url(#ashadow)"/>
+      <rect x="840" y="40" width="230" height="50" rx="12" fill="#800000"/>
+      <rect x="840" y="70" width="230" height="20" fill="#800000"/>
+      <text x="955" y="73" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">Weeks 14&ndash;16</text>
+      <text x="955" y="125" text-anchor="middle" fill="#800000" font-size="22" font-weight="700">Agentic</text>
+      <text x="955" y="152" text-anchor="middle" fill="#800000" font-size="22" font-weight="700">Systems</text>
+      <text x="955" y="190" text-anchor="middle" fill="#666" font-size="18" font-style="italic">"Orchestration"</text>
+      <text x="955" y="218" text-anchor="middle" fill="#999" font-size="13">How to orchestrate all of the above</text>
+
+      <!-- Curved arrow from box 4 back across all -->
+      <path d="M 955 245 Q 955 330 550 340 Q 145 350 145 245" fill="none" stroke="#800000" stroke-width="2" stroke-dasharray="8,4" marker-end="url(#arrowArc2)"/>
+      <defs><marker id="arrowArc2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#800000"/></marker></defs>
+
+      <!-- Caption on arc -->
+      <text x="550" y="380" text-anchor="middle" fill="#800000" font-size="16" font-weight="600">The agent orchestrates everything from earlier themes</text>
+    </svg>
+  </div>
+
+  <!-- ==================== SLIDE 18: Final ==================== -->
+  <div class="slide final-slide" style="padding:60px 80px;">
+    <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+      <h2 style="font-size:42px; margin-bottom:30px;">Good Luck with Final Projects!</h2>
+      <div style="font-size:22px; opacity:0.9; margin-bottom:40px; line-height:1.7;">
+        <p>Presentations: <strong>Fri Apr. 24</strong> &nbsp;|&nbsp; <strong>Mon Apr. 27</strong> &nbsp;|&nbsp; <strong>Wed Apr. 29</strong></p>
+      </div>
+      <div style="width:120px; height:2px; background:rgba(255,255,255,0.3); margin-bottom:40px;"></div>
+      <h1 style="font-size:36px; font-weight:400; opacity:0.9;">Thank you for a great semester!</h1>
+      <div style="margin-top:50px; opacity:0.5; font-size:16px;">
+        CSCI 3397 / PSYC 3317 &nbsp;|&nbsp; Spring 2026 &nbsp;|&nbsp; Donglai Wei
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #deck -->
+
+<script>
+(function () {
+  'use strict';
+
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total  = slides.length;
+  let cur = 0;
+
+  const progress = document.getElementById('progress');
+  const counter  = document.getElementById('counter');
+  const deck     = document.getElementById('deck');
+
+  function show(n) {
+    cur = Math.max(0, Math.min(n, total - 1));
+    slides.forEach((s, i) => s.classList.toggle('active', i === cur));
+    progress.style.width = ((cur + 1) / total * 100) + '%';
+    counter.textContent = (cur + 1) + ' / ' + total;
+    // Make counter white on dark slides
+    const active = slides[cur];
+    const isDark = active.classList.contains('title-slide') ||
+                   active.classList.contains('section-slide') ||
+                   active.classList.contains('final-slide');
+    counter.style.color = isDark ? 'rgba(255,255,255,0.5)' : '#999';
+  }
+
+  // Keyboard
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ')  { show(cur + 1); e.preventDefault(); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                      { show(cur - 1); e.preventDefault(); }
+    if (e.key === 'Home') { show(0); e.preventDefault(); }
+    if (e.key === 'End')  { show(total - 1); e.preventDefault(); }
+  });
+
+  // Click to advance (right half), go back (left half)
+  deck.addEventListener('click', function (e) {
+    const rect = deck.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    if (x > rect.width / 2) show(cur + 1);
+    else show(cur - 1);
+  });
+
+  // Touch support
+  let touchStartX = 0;
+  deck.addEventListener('touchstart', function (e) { touchStartX = e.changedTouches[0].clientX; });
+  deck.addEventListener('touchend', function (e) {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (dx < -40) show(cur + 1);
+    else if (dx > 40) show(cur - 1);
+  });
+
+  // Resize: scale deck to fill viewport
+  function resize() {
+    const sw = 1280, sh = 720;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const scale = Math.min(vw / sw, vh / sh);
+    deck.style.transform = 'scale(' + scale + ')';
+    deck.style.width  = sw + 'px';
+    deck.style.height = sh + 'px';
+    // Center
+    const left = (vw - sw * scale) / 2;
+    const top  = (vh - sh * scale) / 2;
+    deck.style.position = 'absolute';
+    deck.style.left = left + 'px';
+    deck.style.top  = top  + 'px';
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Init
+  show(0);
+})();
+</script>
+</body>
+</html>

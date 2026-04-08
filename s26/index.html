@@ -727,21 +727,23 @@ PathChat, BiomedCLIP; report generation, visual Q&A
 </td>
 <td></td>
 </tr>
-<tr><td align=center colspan="5"><h3><font color=#800000>Theme 4: Agentic Systems</font></h3></td></tr>
+<tr><td align=center colspan="5"><h3><font color=#800000>Theme 4: Agentic Systems — Building a Mini Claude Code</font></h3></td></tr>
 <tr>
-<td rowspan=3 style="vertical-align:middle;text-align:center;">LLM Tooling + RAG<br />[Week 14]</td>
+<td rowspan=6 style="vertical-align:middle;text-align:center;">Agentic Systems<br />[Week 14-15]</td>
 <td>Mon, Apr. 13</td>
 <td class="topic">
-Lec. 32: LLM APIs & Prompt Engineering
+<a href="notes/l32.txt">Lec. 32: LLM APIs & the Agency Spectrum</a>
 <div class="subtopic">
-API calls, prompt design, structured outputs, tool calling
-<br/><font color=#800000>extracting structured findings from reports</font>
+API basics (messages, streaming, tokens), the agency spectrum (processor → router → tool call → agent → multi-agent),
+prompt engineering for medical text
+<br/><font color=#800000>extracting structured findings from radiology reports</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Coding: <a href="https://platform.openai.com/docs/quickstart">OpenAI API quickstart</a></li>
-  <li>Reference: <a href="https://bc-cv.github.io/csci3388/f25/">CSCI 3388: GenAI</a></li>
+  <li>Concept: <a href="https://huggingface.co/docs/smolagents/conceptual_guides/intro_agents">smolagents: intro to agents</a></li>
+  <li>Coding: <a href="https://docs.anthropic.com/en/docs/initial-setup">Anthropic API quickstart</a></li>
+  <li>Reference: <a href="https://github.com/anthropics/anthropic-cookbook">Anthropic cookbook</a></li>
 </ul>
 </td>
 <td>ps4 out (agentic systems)</td>
@@ -750,16 +752,17 @@ API calls, prompt design, structured outputs, tool calling
 
 <td>Wed, Apr. 15</td>
 <td class="topic">
-Lec. 33: RAG & Document Search
+<a href="notes/l33.txt">Lec. 33: Tool Use & the Core Agent Loop</a>
 <div class="subtopic">
-embeddings, vector search, retrieval-augmented generation
-<br/><font color=#800000>searching medical literature by case similarity</font>
+tool schemas (JSON), tool dispatch, the ReAct loop (Think → Act → Observe),
+code agents vs. JSON agents
+<br/><font color=#800000>agent with cell-counting and measurement tools</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Tutorial: <a href="https://docs.llamaindex.ai/en/stable/">LlamaIndex</a></li>
-  <li>Concept: embeddings, chunking, vector databases</li>
+  <li>Tutorial: <a href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use">Claude tool use</a></li>
+  <li>Code: <a href="https://github.com/donglaiw/nano-claude-code">nano-claude-code</a> (<code>agent.py</code>, <code>tool_registry.py</code>)</li>
 </ul>
 </td>
 <td><font color=#800000>lab10 due</font></td>
@@ -768,35 +771,37 @@ embeddings, vector search, retrieval-augmented generation
 
 <td>Fri, Apr. 17</td>
 <td class="topic">
-Lec. 34: Coding Agents for Data Analysis
+<a href="notes/l34.txt">Lec. 34: Coding Agent with File I/O & Bash</a>
 <div class="subtopic">
-code generation, tool use, iterative analysis pipelines
-<br/><font color=#800000>automated cell counting and statistics</font>
+Read/Write/Edit/Bash tools, system prompt engineering, context window management,
+permission gates and safety
+<br/><font color=#800000>agent that writes and runs image analysis scripts</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Tutorial: <a href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use">Claude tool use</a></li>
-  <li>Example: automated image analysis notebooks</li>
+  <li>Code: <a href="https://github.com/donglaiw/nano-claude-code">nano-claude-code</a> (<code>tools.py</code>, <code>context.py</code>, <code>compaction.py</code>)</li>
+  <li>Reference: <a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview">Prompt engineering guide</a></li>
 </ul>
 </td>
 <td></td>
 </tr>
-<tr><td align=center colspan="5">No Class (Patriot's Day: Mon Apr. 20)</td></tr>
+<tr><td align=center colspan="4">No Class (Patriot's Day: Mon Apr. 20)</td></tr>
 <tr>
-<td rowspan=2 style="vertical-align:middle;text-align:center;">Agentic Systems<br />[Week 15]</td>
 <td>Tue, Apr. 21 <br />(Mon class)</td>
 <td class="topic">
-Lec. 35: Agentic Radiology/Pathology Workflows
+<a href="notes/l35.txt">Lec. 35: RAG, Memory & Multi-Agent Systems</a>
 <div class="subtopic">
-automated reading, report drafting, quality checks
-<br/><font color=#800000>end-to-end slide screening → diagnosis pipeline</font>
+RAG as a tool (embeddings, vector search), persistent memory, sub-agents,
+MCP protocol for external systems
+<br/><font color=#800000>multi-agent pathology pipeline: search → analyze → report</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Case study: automated radiology report drafting</li>
-  <li>Case study: pathology slide screening pipeline</li>
+  <li>Code: <a href="https://github.com/donglaiw/nano-claude-code">nano-claude-code</a> (<code>memory/</code>, <code>multi_agent/</code>, <code>mcp/</code>)</li>
+  <li>Concept: <a href="https://docs.llamaindex.ai/en/stable/">LlamaIndex RAG tutorial</a></li>
+  <li>Spec: <a href="https://modelcontextprotocol.io/">Model Context Protocol</a></li>
 </ul>
 </td>
 <td></td>
@@ -805,14 +810,16 @@ automated reading, report drafting, quality checks
 
 <td>Wed, Apr. 22</td>
 <td class="topic">
-Lec. 36: Deploying a Biomedical AI Product
+<a href="notes/l36.txt">Lec. 36: Putting It All Together — Agentic Biomedical AI</a>
 <div class="subtopic">
-latency, monitoring, HIPAA/privacy; live demo practice
-<br/><font color=#800000>deploying a clinical decision-support tool</font>
+full nano-claude-code architecture, REPL + skills + plugins,
+deployment (HIPAA, FDA, monitoring), live demo
+<br/><font color=#800000>end-to-end: slide screening → diagnosis → report</font>
 </div>
 </td>
 <td>
 <ul class="materials">
+  <li>Code: <a href="https://github.com/donglaiw/nano-claude-code">nano-claude-code</a> (full system)</li>
   <li>Reference: <a href="https://themodernsoftware.dev">themodernsoftware.dev</a></li>
   <li>Topics: FDA/CE approval, HIPAA, model monitoring</li>
 </ul>

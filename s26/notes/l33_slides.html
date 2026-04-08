@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 33: Tool Use &amp; the Core Agent Loop</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --maroon: #800000;
+    --maroon-light: #a00000;
+    --text: #333;
+    --bg: #fff;
+    --code-bg: #f5f5f5;
+    --code-border: #e0e0e0;
+    --blue: #2563eb;
+    --green: #16a34a;
+    --orange: #ea580c;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #000;
+  }
+
+  /* ---- Slide container ---- */
+  #deck {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4vh 6vw;
+    background: var(--bg);
+    color: var(--text);
+    overflow-y: auto;
+  }
+  .slide.active { display: flex; }
+
+  /* ---- Title slide special ---- */
+  .slide.title-slide {
+    background: var(--maroon);
+    color: #fff;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+  }
+  .slide.title-slide h1 { font-size: 3.2vw; margin-bottom: 1.5vh; letter-spacing: -0.02em; }
+  .slide.title-slide h2 { font-size: 2vw; font-weight: 400; opacity: 0.85; margin-bottom: 1vh; }
+  .slide.title-slide h3 { font-size: 1.5vw; font-weight: 400; opacity: 0.7; margin-bottom: 3vh; }
+  .slide.title-slide .meta { font-size: 1.1vw; opacity: 0.6; }
+
+  /* ---- Section divider ---- */
+  .slide.section-slide {
+    background: var(--maroon);
+    color: #fff;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+  }
+  .slide.section-slide .section-number { font-size: 1.4vw; opacity: 0.6; margin-bottom: 1vh; text-transform: uppercase; letter-spacing: 0.15em; }
+  .slide.section-slide h1 { font-size: 3.6vw; font-weight: 700; letter-spacing: -0.02em; }
+  .slide.section-slide .section-sub { font-size: 1.4vw; opacity: 0.7; margin-top: 1.5vh; max-width: 60vw; }
+
+  /* ---- Content slides ---- */
+  .slide h1 { font-size: 2.2vw; color: var(--maroon); margin-bottom: 2.5vh; font-weight: 700; letter-spacing: -0.01em; }
+  .slide h2 { font-size: 1.6vw; color: var(--maroon); margin-bottom: 1.5vh; font-weight: 600; }
+  .slide p, .slide li { font-size: 1.35vw; line-height: 1.65; }
+  .slide ul { margin-left: 2vw; margin-bottom: 1.5vh; }
+  .slide li { margin-bottom: 0.6vh; }
+  .slide li::marker { color: var(--maroon); }
+  .slide .highlight { color: var(--maroon); font-weight: 600; }
+  .slide .dim { opacity: 0.55; font-size: 1.1vw; }
+
+  /* ---- Code blocks ---- */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 8px;
+    padding: 1.8vh 1.5vw;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+    font-size: 1.05vw;
+    line-height: 1.55;
+    overflow-x: auto;
+    margin: 1vh 0 1.5vh;
+    color: #1e1e1e;
+    tab-size: 4;
+  }
+  pre .kw { color: #7c3aed; font-weight: 600; }
+  pre .fn { color: #2563eb; }
+  pre .str { color: #16a34a; }
+  pre .cmt { color: #9ca3af; font-style: italic; }
+  pre .num { color: #ea580c; }
+  pre .type { color: #0891b2; }
+
+  /* ---- Two-column layout ---- */
+  .cols { display: flex; gap: 3vw; align-items: flex-start; }
+  .cols > * { flex: 1; }
+
+  /* ---- SVG figures ---- */
+  .figure-wrap { margin: 1.5vh 0; }
+  .figure-wrap svg { display: block; margin: 0 auto; }
+
+  /* ---- Progress bar ---- */
+  #progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 4px;
+    background: var(--maroon);
+    transition: width 0.3s ease;
+    z-index: 100;
+  }
+
+  /* ---- Slide counter ---- */
+  #counter {
+    position: fixed;
+    bottom: 2vh;
+    right: 3vw;
+    font-size: 1vw;
+    color: #999;
+    font-variant-numeric: tabular-nums;
+    z-index: 100;
+  }
+  .slide.title-slide ~ #counter,
+  .slide.section-slide ~ #counter { color: rgba(255,255,255,0.5); }
+
+  /* ---- Inline code ---- */
+  code {
+    font-family: "SF Mono", "Fira Code", Consolas, monospace;
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
+    font-size: 0.92em;
+  }
+
+  /* Emoji accent */
+  .emoji { font-style: normal; }
+
+  /* step list with numbers */
+  .step-list { counter-reset: step; list-style: none; margin-left: 0; }
+  .step-list li { counter-increment: step; position: relative; padding-left: 2.5vw; margin-bottom: 1.2vh; }
+  .step-list li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 0.1em;
+    width: 1.8vw; height: 1.8vw; border-radius: 50%;
+    background: var(--maroon); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1vw; font-weight: 700;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 0.2em 0.8em;
+    border-radius: 999px;
+    font-size: 0.9em;
+    font-weight: 600;
+  }
+  .tag-blue { background: #dbeafe; color: #1d4ed8; }
+  .tag-green { background: #dcfce7; color: #15803d; }
+  .tag-red { background: #fee2e2; color: #991b1b; }
+  .tag-orange { background: #ffedd5; color: #c2410c; }
+
+  /* Comparison grid */
+  .compare-panel {
+    border-radius: 12px;
+    padding: 2vh 1.5vw;
+    border: 2px solid;
+  }
+  .compare-panel.panel-red { border-color: #fca5a5; background: #fef2f2; }
+  .compare-panel.panel-green { border-color: #86efac; background: #f0fdf4; }
+  .compare-panel h2 { font-size: 1.4vw; margin-bottom: 1vh; }
+  .compare-panel pre { font-size: 0.95vw; }
+  .pro { color: #16a34a; font-weight: 600; }
+  .con { color: #dc2626; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<div id="counter"></div>
+
+<div id="deck">
+
+<!-- ============================================================ -->
+<!-- SLIDE 1: Title -->
+<!-- ============================================================ -->
+<div class="slide title-slide active">
+  <h2>Lecture 33</h2>
+  <h1>Tool Use &amp; the Core Agent Loop</h1>
+  <h3>Theme 4: Agentic Systems &mdash; Building a Mini Claude Code (2/5)</h3>
+  <div class="meta">CSCI 3397 / PSYC 3317 &nbsp;|&nbsp; Spring 2026 &nbsp;|&nbsp; Donglai Wei</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 2: Housekeeping -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>Housekeeping</h1>
+  <ul>
+    <li><span class="highlight">Recap (Lec. 32):</span> LLM APIs let us send messages and get text back. The agency spectrum shows levels of LLM control.</li>
+    <li style="margin-top:1.5vh;"><span class="highlight">Today's Shift:</span> We go from <span class="tag tag-blue">&starf;&star;&star; text in/out</span> to <span class="tag tag-orange">&starf;&starf;&star; LLM calls functions</span>. This is the core of what makes an agent.</li>
+    <li style="margin-top:1.5vh;"><span class="highlight">Reading:</span>
+      <ul style="margin-top:0.5vh;">
+        <li>Anthropic tool use docs</li>
+        <li>nano-claude-code <code>agent.py</code> (179 lines) and <code>tool_registry.py</code> (98 lines)</li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 3: Section — What Is Tool Use? -->
+<!-- ============================================================ -->
+<div class="slide section-slide">
+  <div class="section-number">Section 1</div>
+  <h1>What Is Tool Use?</h1>
+  <div class="section-sub">Instead of just generating text, the LLM can request to call functions.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 4: Tool Use Cycle (SVG) -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>How Tool Use Works</h1>
+  <div class="figure-wrap">
+    <svg viewBox="0 0 900 380" width="100%" xmlns="http://www.w3.org/2000/svg" style="max-width:52vw;">
+      <defs>
+        <filter id="shadow1" x="-5%" y="-5%" width="115%" height="120%">
+          <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.10"/>
+        </filter>
+        <marker id="arr1" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L10,4 L0,8 Z" fill="#555"/>
+        </marker>
+      </defs>
+
+      <!-- Box 1: Send Request -->
+      <rect x="30" y="40" width="180" height="100" rx="14" fill="#2563eb" filter="url(#shadow1)"/>
+      <text x="120" y="78" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">1. Send Request</text>
+      <text x="120" y="103" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="12">Tools + user message</text>
+      <text x="120" y="120" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="12">to LLM API</text>
+
+      <!-- Box 2: LLM Responds -->
+      <rect x="360" y="40" width="180" height="100" rx="14" fill="#800000" filter="url(#shadow1)"/>
+      <text x="450" y="78" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">2. LLM Responds</text>
+      <text x="450" y="103" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="12">Returns tool_use block:</text>
+      <text x="450" y="120" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="12">name + arguments</text>
+
+      <!-- Box 3: Execute Tool -->
+      <rect x="690" y="40" width="180" height="100" rx="14" fill="#16a34a" filter="url(#shadow1)"/>
+      <text x="780" y="78" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">3. Execute Tool</text>
+      <text x="780" y="103" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="12">Your code runs the</text>
+      <text x="780" y="120" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="12">function locally</text>
+
+      <!-- Box 4: Send Result -->
+      <rect x="360" y="240" width="180" height="100" rx="14" fill="#ea580c" filter="url(#shadow1)"/>
+      <text x="450" y="278" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">4. Send Result</text>
+      <text x="450" y="303" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="12">Tool output appended</text>
+      <text x="450" y="320" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="12">to messages</text>
+
+      <!-- Arrows -->
+      <line x1="210" y1="90" x2="355" y2="90" stroke="#555" stroke-width="2.5" marker-end="url(#arr1)"/>
+      <line x1="540" y1="90" x2="685" y2="90" stroke="#555" stroke-width="2.5" marker-end="url(#arr1)"/>
+      <path d="M780,145 L780,290 L545,290" fill="none" stroke="#555" stroke-width="2.5" marker-end="url(#arr1)"/>
+      <path d="M355,290 L120,290 L120,145" fill="none" stroke="#555" stroke-width="2.5" marker-end="url(#arr1)"/>
+
+      <!-- Loop label -->
+      <rect x="145" y="195" width="130" height="30" rx="15" fill="#f5f5f5" stroke="#ccc" stroke-width="1"/>
+      <text x="210" y="215" text-anchor="middle" fill="#555" font-size="13" font-weight="600">Loop until done</text>
+
+      <!-- Or text response -->
+      <text x="450" y="200" text-anchor="middle" fill="#800000" font-size="12" font-weight="600">or final text response</text>
+    </svg>
+  </div>
+  <p style="margin-top:1vh;"><span class="highlight">Key insight:</span> The LLM never executes anything &mdash; it only <em>requests</em> a tool call. Your code decides whether to run it.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 5: Tool Schema -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>Tool Schema (JSON Schema Format)</h1>
+  <pre><span class="cmt"># Each tool is described by a JSON schema the LLM reads</span>
+tools = [{
+    <span class="str">"name"</span>: <span class="str">"count_cells"</span>,
+    <span class="str">"description"</span>: <span class="str">"Count cells in a microscopy image using watershed segmentation."</span>,
+    <span class="str">"input_schema"</span>: {
+        <span class="str">"type"</span>: <span class="str">"object"</span>,
+        <span class="str">"properties"</span>: {
+            <span class="str">"image_path"</span>: {<span class="str">"type"</span>: <span class="str">"string"</span>, <span class="str">"description"</span>: <span class="str">"Path to the microscopy image"</span>},
+            <span class="str">"threshold"</span>:  {<span class="str">"type"</span>: <span class="str">"number"</span>, <span class="str">"description"</span>: <span class="str">"Detection threshold (0-1)"</span>}
+        },
+        <span class="str">"required"</span>: [<span class="str">"image_path"</span>]
+    }
+}]</pre>
+  <div class="cols" style="margin-top: 1.5vh;">
+    <div>
+      <ul>
+        <li><code>name</code> &mdash; how the LLM refers to the tool</li>
+        <li><code>description</code> &mdash; the LLM reads this to decide <em>when</em> to use the tool</li>
+      </ul>
+    </div>
+    <div>
+      <ul>
+        <li><code>input_schema</code> &mdash; JSON Schema defining parameters</li>
+        <li>The LLM generates valid arguments matching this schema</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 6: API Call with Tools -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>API Call with Tools (Anthropic)</h1>
+  <pre>response = client.messages.create(
+    model=<span class="str">"claude-sonnet-4-6-20250514"</span>,
+    max_tokens=<span class="num">1024</span>,
+    tools=tools,
+    messages=[{<span class="str">"role"</span>: <span class="str">"user"</span>,
+               <span class="str">"content"</span>: <span class="str">"Count the cells in slide_042.png"</span>}]
+)
+
+<span class="cmt"># response.stop_reason == "tool_use"</span>
+<span class="cmt"># response.content includes a tool_use block with name and input</span></pre>
+  <div style="margin-top:2vh; padding: 2vh 1.5vw; background: #fef2f2; border-left: 4px solid var(--maroon); border-radius: 0 8px 8px 0;">
+    <p><span class="highlight">Safety Foundation:</span> The LLM doesn't execute anything. It only <em>requests</em> a tool call. Your code decides whether to execute it, enabling permission systems, sandboxing, and audit trails.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 7: Section — The Agent Loop -->
+<!-- ============================================================ -->
+<div class="slide section-slide">
+  <div class="section-number">Section 2</div>
+  <h1>The Agent Loop &mdash; ReAct Pattern</h1>
+  <div class="section-sub">Reasoning + Acting: the LLM alternates between thinking, calling tools, and observing results.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 8: ReAct Loop (SVG) -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>ReAct: Reasoning + Acting (Yao et al., 2022)</h1>
+  <div class="cols">
+    <div class="figure-wrap" style="flex: 1.2;">
+      <svg viewBox="0 0 440 400" width="100%" xmlns="http://www.w3.org/2000/svg" style="max-width:28vw;">
+        <defs>
+          <filter id="shadow2" x="-8%" y="-8%" width="120%" height="125%">
+            <feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#000" flood-opacity="0.12"/>
+          </filter>
+          <marker id="arr2" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L9,3.5 L0,7 Z" fill="#555"/>
+          </marker>
+        </defs>
+
+        <!-- Center label -->
+        <text x="220" y="195" text-anchor="middle" fill="#800000" font-size="18" font-weight="700">ReAct</text>
+        <text x="220" y="215" text-anchor="middle" fill="#800000" font-size="18" font-weight="700">Loop</text>
+
+        <!-- Think node -->
+        <circle cx="220" cy="70" r="52" fill="#800000" filter="url(#shadow2)"/>
+        <text x="220" y="66" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">Think</text>
+        <text x="220" y="84" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="11">Reason about</text>
+        <text x="220" y="97" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="11">next step</text>
+
+        <!-- Act node -->
+        <circle cx="95" cy="320" r="52" fill="#2563eb" filter="url(#shadow2)"/>
+        <text x="95" y="316" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">Act</text>
+        <text x="95" y="334" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="11">Call a tool</text>
+
+        <!-- Observe node -->
+        <circle cx="345" cy="320" r="52" fill="#16a34a" filter="url(#shadow2)"/>
+        <text x="345" y="316" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">Observe</text>
+        <text x="345" y="334" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="11">See tool result</text>
+
+        <!-- Arrows: Think -> Act -->
+        <path d="M178,108 Q120,180 112,265" fill="none" stroke="#555" stroke-width="2.5" marker-end="url(#arr2)"/>
+        <!-- Arrows: Act -> Observe -->
+        <path d="M148,332 Q220,370 293,332" fill="none" stroke="#555" stroke-width="2.5" marker-end="url(#arr2)"/>
+        <!-- Arrows: Observe -> Think -->
+        <path d="M328,270 Q320,180 262,108" fill="none" stroke="#555" stroke-width="2.5" marker-end="url(#arr2)"/>
+      </svg>
+    </div>
+    <div style="flex: 1; padding-top: 2vh;">
+      <ul>
+        <li style="margin-bottom:1.5vh;"><span class="tag tag-red">Think</span> &mdash; Reason about what to do next based on the goal and observations so far</li>
+        <li style="margin-bottom:1.5vh;"><span class="tag tag-blue">Act</span> &mdash; Select and call an appropriate tool with generated arguments</li>
+        <li style="margin-bottom:1.5vh;"><span class="tag tag-green">Observe</span> &mdash; Read the tool result; update understanding</li>
+        <li>Repeat until the task is complete, then return a final text response</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 9: The Core Agent Loop (KEY SLIDE) -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>The Core Agent Loop <span class="dim" style="font-size:1.3vw;">&mdash; ~30 lines of Python</span></h1>
+  <pre><span class="kw">def</span> <span class="fn">agent_loop</span>(user_message, tools, system_prompt):
+    messages = [{<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: user_message}]
+
+    <span class="kw">while</span> <span class="num">True</span>:
+        <span class="cmt"># 1. Call the LLM</span>
+        response = <span class="fn">call_llm</span>(messages, tools, system_prompt)
+
+        <span class="cmt"># 2. Append assistant's response to message history</span>
+        messages.append({<span class="str">"role"</span>: <span class="str">"assistant"</span>, <span class="str">"content"</span>: response.content})
+
+        <span class="cmt"># 3. If no tool calls, we're done — return final text</span>
+        <span class="kw">if</span> response.stop_reason != <span class="str">"tool_use"</span>:
+            <span class="kw">return</span> response.text
+
+        <span class="cmt"># 4. Execute each tool call and append results</span>
+        <span class="kw">for</span> tool_call <span class="kw">in</span> response.tool_calls:
+            result = <span class="fn">execute_tool</span>(tool_call.name, tool_call.input)
+            messages.append({
+                <span class="str">"role"</span>: <span class="str">"user"</span>,
+                <span class="str">"content"</span>: [{<span class="str">"type"</span>: <span class="str">"tool_result"</span>,
+                             <span class="str">"tool_use_id"</span>: tool_call.id,
+                             <span class="str">"content"</span>: result}]
+            })
+        <span class="cmt"># 5. Loop — LLM sees results and decides next action</span></pre>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 10: Key Design Decisions -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>Key Design Decisions</h1>
+  <ul style="font-size:1.3vw;">
+    <li style="margin-bottom:2vh;">
+      <span class="highlight">Loop termination:</span> The LLM decides when to stop (<code>stop_reason != "tool_use"</code>). Add a <code>max_iterations</code> guard for safety.
+    </li>
+    <li style="margin-bottom:2vh;">
+      <span class="highlight">Message accumulation:</span> Every action and observation is appended to <code>messages</code> &mdash; the LLM sees its full history. This is how it maintains context across turns.
+    </li>
+    <li style="margin-bottom:2vh;">
+      <span class="highlight">Multiple tool calls:</span> The LLM can request several tools in one turn for parallel execution.
+    </li>
+    <li style="margin-bottom:2vh;">
+      <span class="highlight">Event-driven architecture</span> (nano-claude-code): Uses Python generators (<code>yield</code>) to emit typed events &mdash; <code>TextChunk</code>, <code>ToolStart</code>, <code>ToolEnd</code>, <code>PermissionRequest</code>, <code>TurnDone</code> &mdash; decoupling loop logic from UI.
+    </li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 11: Section — Tool Registry -->
+<!-- ============================================================ -->
+<div class="slide section-slide">
+  <div class="section-number">Section 3</div>
+  <h1>The Tool Registry</h1>
+  <div class="section-sub">A plugin architecture for adding, removing, and dispatching tools dynamically.</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 12: ToolDef + Registry -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>ToolDef &amp; Registry Operations</h1>
+  <div class="cols">
+    <div>
+      <h2>ToolDef dataclass</h2>
+      <pre><span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="type">ToolDef</span>:
+    name: <span class="type">str</span>           <span class="cmt"># "count_cells"</span>
+    schema: <span class="type">dict</span>         <span class="cmt"># JSON schema for API</span>
+    func: <span class="type">Callable</span>      <span class="cmt"># (params, cfg) -> str</span>
+    read_only: <span class="type">bool</span>     <span class="cmt"># safe = auto-approve</span>
+    concurrent_safe: <span class="type">bool</span> <span class="cmt"># can run in parallel</span></pre>
+    </div>
+    <div>
+      <h2>Registry API</h2>
+      <ul>
+        <li><code>register_tool(tool_def)</code> &mdash; add a tool at runtime</li>
+        <li style="margin-top:1vh;"><code>get_tool(name)</code> &mdash; look up by name</li>
+        <li style="margin-top:1vh;"><code>get_tool_schemas()</code> &mdash; export all schemas for API call</li>
+        <li style="margin-top:1vh;"><code>execute_tool(name, params)</code> &mdash; dispatch + output truncation (if &gt; 32K chars: keep first 50% + last 25%)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 13: Tool Registry Architecture (SVG) -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>Tool Registry Architecture</h1>
+  <div class="figure-wrap">
+    <svg viewBox="0 0 920 360" width="100%" xmlns="http://www.w3.org/2000/svg" style="max-width:56vw;">
+      <defs>
+        <filter id="shadow3" x="-4%" y="-6%" width="112%" height="118%">
+          <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.10"/>
+        </filter>
+        <marker id="arr3" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L9,3.5 L0,7 Z" fill="#555"/>
+        </marker>
+        <marker id="arr3r" markerWidth="9" markerHeight="7" refX="1" refY="3.5" orient="auto" markerUnits="strokeWidth">
+          <path d="M9,0 L0,3.5 L9,7 Z" fill="#555"/>
+        </marker>
+      </defs>
+
+      <!-- Tool boxes (left) -->
+      <rect x="20" y="20" width="140" height="56" rx="10" fill="#2563eb" filter="url(#shadow3)"/>
+      <text x="90" y="53" text-anchor="middle" fill="#fff" font-size="15" font-weight="600">Read</text>
+
+      <rect x="20" y="96" width="140" height="56" rx="10" fill="#16a34a" filter="url(#shadow3)"/>
+      <text x="90" y="129" text-anchor="middle" fill="#fff" font-size="15" font-weight="600">Write</text>
+
+      <rect x="20" y="172" width="140" height="56" rx="10" fill="#ea580c" filter="url(#shadow3)"/>
+      <text x="90" y="205" text-anchor="middle" fill="#fff" font-size="15" font-weight="600">Bash</text>
+
+      <rect x="20" y="248" width="140" height="56" rx="10" fill="#7c3aed" filter="url(#shadow3)"/>
+      <text x="90" y="281" text-anchor="middle" fill="#fff" font-size="15" font-weight="600">Grep</text>
+
+      <!-- Arrows to registry -->
+      <line x1="165" y1="48" x2="330" y2="140" stroke="#555" stroke-width="2" marker-end="url(#arr3)"/>
+      <line x1="165" y1="124" x2="330" y2="155" stroke="#555" stroke-width="2" marker-end="url(#arr3)"/>
+      <line x1="165" y1="200" x2="330" y2="185" stroke="#555" stroke-width="2" marker-end="url(#arr3)"/>
+      <line x1="165" y1="276" x2="330" y2="210" stroke="#555" stroke-width="2" marker-end="url(#arr3)"/>
+
+      <text x="230" y="115" text-anchor="middle" fill="#888" font-size="12" font-style="italic">register_tool()</text>
+
+      <!-- Registry box (center) -->
+      <rect x="335" y="90" width="220" height="180" rx="16" fill="#800000" filter="url(#shadow3)"/>
+      <text x="445" y="135" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">Tool Registry</text>
+      <text x="445" y="165" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="12">get_tool_schemas()</text>
+      <text x="445" y="185" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="12">execute_tool(name, params)</text>
+      <text x="445" y="205" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="12">get_tool(name)</text>
+      <line x1="365" y1="148" x2="525" y2="148" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+
+      <!-- Arrows to agent loop -->
+      <line x1="560" y1="155" x2="635" y2="135" stroke="#555" stroke-width="2" marker-end="url(#arr3)"/>
+      <text x="605" y="124" text-anchor="middle" fill="#888" font-size="12" font-style="italic">schemas</text>
+
+      <line x1="635" y1="225" x2="560" y2="210" stroke="#555" stroke-width="2" marker-end="url(#arr3)"/>
+      <text x="605" y="237" text-anchor="middle" fill="#888" font-size="12" font-style="italic">dispatch</text>
+
+      <!-- Agent loop box (right) -->
+      <rect x="640" y="80" width="250" height="200" rx="16" fill="#f8f8f8" stroke="#ccc" stroke-width="2" filter="url(#shadow3)"/>
+      <text x="765" y="125" text-anchor="middle" fill="#800000" font-size="18" font-weight="700">Agent Loop</text>
+      <line x1="665" y1="138" x2="865" y2="138" stroke="#ddd" stroke-width="1"/>
+      <text x="765" y="165" text-anchor="middle" fill="#555" font-size="13">call_llm(messages, schemas)</text>
+      <text x="765" y="190" text-anchor="middle" fill="#555" font-size="13">parse tool_use blocks</text>
+      <text x="765" y="215" text-anchor="middle" fill="#555" font-size="13">execute via registry</text>
+      <text x="765" y="240" text-anchor="middle" fill="#555" font-size="13">append results &amp; loop</text>
+
+      <!-- Benefits annotations -->
+      <text x="445" y="310" text-anchor="middle" fill="#800000" font-size="13" font-weight="600">Open/closed principle: add tools without modifying the loop</text>
+      <text x="445" y="332" text-anchor="middle" fill="#888" font-size="12">Permissions via read_only flag &bull; Extensible via plugins &amp; MCP</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 14: Code Agents vs JSON Tool Calling (SVG) -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>Code Agents vs. JSON Tool Calling</h1>
+  <div class="cols" style="gap:2vw;">
+    <div class="compare-panel panel-red">
+      <h2 style="color:#991b1b;">JSON Tool Calling</h2>
+      <pre style="font-size:0.95vw; background:#fff; border-color:#fca5a5;"><span class="cmt">// LLM output: one tool call at a time</span>
+{
+  <span class="str">"tool"</span>: <span class="str">"count_cells"</span>,
+  <span class="str">"input"</span>: {<span class="str">"path"</span>: <span class="str">"slide.png"</span>}
+}
+<span class="cmt">// wait for result...</span>
+{
+  <span class="str">"tool"</span>: <span class="str">"compute_statistics"</span>,
+  <span class="str">"input"</span>: {<span class="str">"values"</span>: <span class="str">"???"</span>}  <span class="cmt">// how?</span>
+}</pre>
+      <p style="margin-top:1vh; font-size:1.1vw;">
+        <span class="con">&#10007; Can't compose calls</span><br>
+        <span class="con">&#10007; No variables or references</span><br>
+        <span class="pro" style="color:#555;">&#10003; Easy to validate &amp; sandbox</span>
+      </p>
+    </div>
+    <div class="compare-panel panel-green">
+      <h2 style="color:#15803d;">Code Agent</h2>
+      <pre style="font-size:0.95vw; background:#fff; border-color:#86efac;"><span class="cmt"># LLM writes executable Python</span>
+cells = count_cells(<span class="str">"slide.png"</span>)
+areas = [measure_area(<span class="str">"slide.png"</span>, c)
+         <span class="kw">for</span> c <span class="kw">in</span> cells.labels]
+stats = compute_statistics(areas)
+<span class="fn">print</span>(f<span class="str">"Found {len(cells)} cells, "</span>
+      f<span class="str">"mean area: {stats.mean:.1f} um2"</span>)</pre>
+      <p style="margin-top:1vh; font-size:1.1vw;">
+        <span class="pro">&#10003; Composable &mdash; nest calls</span><br>
+        <span class="pro">&#10003; Variables, loops, functions</span><br>
+        <span class="con">&#10007; Needs sandboxing (security)</span>
+      </p>
+    </div>
+  </div>
+  <p class="dim" style="margin-top:1.5vh; text-align:center;">Insight from Hugging Face <em>smolagents</em> &mdash; LLMs are trained on code, so code generation is more natural.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 15: Demo — Biomedical Agent Trace -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>Demo: Biomedical Agent Execution Trace</h1>
+  <p style="margin-bottom:1.5vh;"><span class="highlight">Prompt:</span> <em>"Analyze slide_042.png &mdash; count all cells, measure the area of the largest cluster, and compute summary statistics."</em></p>
+  <div style="background:var(--code-bg); border:1px solid var(--code-border); border-radius:10px; padding:2vh 1.5vw; font-family:'SF Mono',Consolas,monospace; font-size:1.05vw; line-height:1.8;">
+    <div><span class="tag tag-red" style="font-size:0.85vw;">Think</span> &nbsp; I need to count cells first, then measure area, then statistics.</div>
+    <div style="margin-top:0.8vh;"><span class="tag tag-blue" style="font-size:0.85vw;">Act</span> &nbsp; <code>count_cells("slide_042.png")</code></div>
+    <div style="margin-top:0.8vh;"><span class="tag tag-green" style="font-size:0.85vw;">Observe</span> &nbsp; "Found 247 cells across 12 clusters."</div>
+    <div style="margin-top:1.2vh; border-top:1px dashed #ccc; padding-top:0.8vh;"><span class="tag tag-red" style="font-size:0.85vw;">Think</span> &nbsp; Cluster 7 is largest. Measure its area.</div>
+    <div style="margin-top:0.8vh;"><span class="tag tag-blue" style="font-size:0.85vw;">Act</span> &nbsp; <code>measure_area("slide_042.png", label=7)</code></div>
+    <div style="margin-top:0.8vh;"><span class="tag tag-green" style="font-size:0.85vw;">Observe</span> &nbsp; "Area: 1,340 &mu;m&sup2;"</div>
+    <div style="margin-top:1.2vh; border-top:1px dashed #ccc; padding-top:0.8vh;"><span class="tag tag-red" style="font-size:0.85vw;">Think</span> &nbsp; Now compute statistics on all cell areas.</div>
+    <div style="margin-top:0.8vh;"><span class="tag tag-blue" style="font-size:0.85vw;">Act</span> &nbsp; <code>compute_statistics([54.2, 61.8, ..., 47.3])</code></div>
+    <div style="margin-top:0.8vh;"><span class="tag tag-green" style="font-size:0.85vw;">Observe</span> &nbsp; "mean=58.3, std=12.1, median=56.7"</div>
+    <div style="margin-top:1.2vh; border-top:1px dashed #ccc; padding-top:0.8vh;"><span class="tag tag-orange" style="font-size:0.85vw;">Done</span> &nbsp; Final text report with all results.</div>
+  </div>
+  <p class="dim" style="margin-top:1vh;">The agent decided the order of tool calls on its own &mdash; no hardcoded workflow.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 16: Wrap-Up -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h1>Wrap-Up &amp; Looking Ahead</h1>
+  <div style="display:flex; gap:2.5vw; margin-top:1vh;">
+    <div style="flex:1; background:#fef2f2; border-radius:12px; padding:2.5vh 1.5vw; border-left:5px solid var(--maroon);">
+      <h2 style="font-size:1.4vw; margin-bottom:1.2vh;">Key Takeaway</h2>
+      <p style="font-size:1.25vw; line-height:1.6;">Tool use + the agent loop is the core of every coding agent. The LLM <strong>reasons</strong> about what to do, <strong>calls</strong> tools, <strong>observes</strong> results, and <strong>loops</strong>. The entire loop is ~30 lines of Python.</p>
+    </div>
+    <div style="flex:1;">
+      <h2 style="font-size:1.4vw; margin-bottom:1.2vh;">What We Built Today</h2>
+      <ul style="font-size:1.2vw; line-height:1.7;">
+        <li><code>tool_registry.py</code> &mdash; plugin system (98 lines)</li>
+        <li><code>agent.py</code> &mdash; the core loop (179 lines)</li>
+        <li>Together: the brain of nano-claude-code</li>
+      </ul>
+      <h2 style="font-size:1.4vw; margin-top:2.5vh; margin-bottom:1.2vh;">Next: Lecture 34</h2>
+      <ul style="font-size:1.2vw; line-height:1.7;">
+        <li>Add real tools: file I/O (Read, Write, Edit), Bash execution</li>
+        <li>Context management</li>
+        <li>The agent writes and runs its own analysis scripts</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div><!-- end #deck -->
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let cur = 0;
+
+  const progress = document.getElementById('progress');
+  const counter  = document.getElementById('counter');
+
+  function show(idx) {
+    if (idx < 0 || idx >= total) return;
+    slides[cur].classList.remove('active');
+    cur = idx;
+    slides[cur].classList.add('active');
+    update();
+  }
+
+  function update() {
+    const pct = total > 1 ? (cur / (total - 1)) * 100 : 100;
+    progress.style.width = pct + '%';
+    counter.textContent = (cur + 1) + ' / ' + total;
+
+    // Adjust counter color for dark slides
+    const s = slides[cur];
+    if (s.classList.contains('title-slide') || s.classList.contains('section-slide')) {
+      counter.style.color = 'rgba(255,255,255,0.5)';
+    } else {
+      counter.style.color = '#999';
+    }
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      show(cur + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      show(cur - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      show(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      show(total - 1);
+    }
+  });
+
+  // Click to advance (right half = next, left half = prev)
+  document.addEventListener('click', function(e) {
+    // Ignore clicks on interactive elements
+    if (e.target.closest('a, button, input, textarea, select')) return;
+    if (e.clientX > window.innerWidth / 2) {
+      show(cur + 1);
+    } else {
+      show(cur - 1);
+    }
+  });
+
+  // Touch swipe
+  let touchStartX = 0;
+  document.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  });
+  document.addEventListener('touchend', function(e) {
+    const dx = e.changedTouches[0].screenX - touchStartX;
+    if (Math.abs(dx) > 50) {
+      if (dx < 0) show(cur + 1);
+      else show(cur - 1);
+    }
+  });
+
+  // Init
+  update();
+})();
+</script>
+
+</body>
+</html>

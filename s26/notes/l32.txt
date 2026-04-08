@@ -1,0 +1,125 @@
+**Lecture 32: LLM APIs & the Agency Spectrum**
+
+**Total Time: 50 minutes**
+
+**[5 min] 0. Housekeeping**
+- **Recap**: Lec. 30–31 — multimodal foundation models (CLIP, LLaVA) can process both images and text.
+- **Today's Shift**: We move from *using* foundation models to *orchestrating* them — giving LLMs agency to act in the world.
+- **Theme 4 Overview**: Over the next 5 lectures, we will build a mini Claude Code step-by-step — a coding agent that can read files, write scripts, and run analyses. Reference implementation: nano-claude-code.
+- **Action**: ps4 out (agentic systems).
+- **Reading**: smolagents intro (HuggingFace); Anthropic API quickstart.
+
+**[10 min] 1. The Agency Spectrum**
+- **Core Definition**: AI agents are programs where LLM outputs control the workflow.
+- **Agency is a Spectrum, Not Binary**:
+  | Level | Description | Example |
+  |-------|-------------|---------|
+  | ☆☆☆ | LLM output has no impact on flow | `process_llm_output(response)` |
+  | ★☆☆ | LLM output controls an if/else | `if llm_decision(): path_a() else: path_b()` |
+  | ★★☆ | LLM output controls function execution | `run_function(llm_chosen_tool, llm_chosen_args)` |
+  | ★★☆ | LLM controls iteration & continuation | `while llm_should_continue(): execute_next_step()` |
+  | ★★★ | One agent starts another agent | `if llm_trigger(): execute_agent()` |
+  | ★★★ | LLM writes code, defines own tools | Code agents |
+- **The Multi-Step Agent Pattern** (this is what we're building):
+  ```
+  memory = [user_task]
+  while llm_should_continue(memory):
+      action = llm_get_next_action(memory)
+      observations = execute_action(action)
+      memory += [action, observations]
+  ```
+- **When to Use Agents vs. Simpler Approaches**:
+  - If the workflow is predictable → hardcode it (100% reliable, no LLM errors).
+  - If user requests are unpredictable and require flexible tool combinations → use an agent.
+  - Example: "Is it possible to reschedule my MRI to Wednesday and still get results before my Thursday appointment?" — no fixed workflow can handle this.
+- **Biomedical Motivation**: Clinical workflows involve many variable steps (retrieve prior scans, compare, measure, report). Agents can orchestrate these flexibly.
+
+**[15 min] 2. LLM API Basics**
+- **The Messages Format** (universal across providers):
+  ```python
+  messages = [
+      {"role": "system", "content": "You are a radiology assistant..."},
+      {"role": "user", "content": "Summarize this CT report..."},
+      {"role": "assistant", "content": "The report shows..."}
+  ]
+  ```
+  - Conversation is a list of role-tagged messages.
+  - System message: sets behavior, persona, constraints.
+  - Multi-turn: append user/assistant messages to continue conversation.
+- **Making an API Call** (Anthropic Python SDK):
+  ```python
+  import anthropic
+  client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
+
+  response = client.messages.create(
+      model="claude-sonnet-4-6-20250514",
+      max_tokens=1024,
+      system="You are a biomedical image analysis assistant.",
+      messages=[{"role": "user", "content": "What structures are visible in a brain MRI T1 sequence?"}]
+  )
+  print(response.content[0].text)
+  ```
+- **Streaming** — tokens arrive incrementally (important for interactive UX):
+  ```python
+  with client.messages.stream(model=..., messages=...) as stream:
+      for text in stream.text_stream:
+          print(text, end="", flush=True)
+  ```
+- **Key Parameters**:
+  - `model`: which LLM (claude-sonnet, claude-opus, gpt-4o, etc.).
+  - `max_tokens`: output length limit.
+  - `temperature`: 0 = deterministic, 1 = creative. For medical use → low temperature.
+  - `system`: system prompt (separate from messages in Anthropic API).
+- **Tokens & Cost**:
+  - LLMs process text as tokens (~0.75 words per token, or ~3.5 chars per token).
+  - Cost = input tokens + output tokens. Prices vary by model.
+  - Context window: how many tokens the model can see at once (e.g., 200K for Claude).
+- **nano-claude-code connection**: This corresponds to `providers.py` — the API abstraction layer that handles streaming and message format conversion.
+
+**[10 min] 3. Structured Outputs & Prompt Engineering**
+- **The Problem**: Raw LLM text is hard to parse programmatically.
+- **Solution 1 — Prompt for JSON**:
+  ```python
+  prompt = """Extract findings from this radiology report as JSON:
+  {"findings": [{"structure": "...", "observation": "...", "severity": "normal|mild|severe"}]}
+
+  Report: The liver shows a 2.3cm hypodense lesion in segment VII..."""
+  ```
+- **Solution 2 — Tool Use (Structured Output via Schema)** (preview for Lec. 33):
+  - Define a JSON schema; the LLM is forced to produce valid output matching it.
+  - More reliable than asking nicely in the prompt.
+- **Prompt Engineering Principles for Medical Domain**:
+  1. **Be specific**: "Extract all anatomical structures mentioned" > "Analyze this report."
+  2. **Provide examples** (few-shot): Show 1–2 input/output pairs.
+  3. **Set constraints**: "Output only the JSON. Do not include explanations."
+  4. **Domain grounding**: Include relevant medical context in the system prompt.
+  5. **Chain-of-thought**: "First identify all findings, then classify severity, then format as JSON."
+- **Vision API — Sending Images**:
+  ```python
+  response = client.messages.create(
+      model="claude-sonnet-4-6-20250514",
+      messages=[{
+          "role": "user",
+          "content": [
+              {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": img_b64}},
+              {"type": "text", "text": "Describe the histological features in this H&E stained slide."}
+          ]
+      }]
+  )
+  ```
+  - Multimodal messages: mix text and images in a single turn.
+  - Direct connection to Lec. 30–31 (multimodal FMs like LLaVA).
+
+**[5 min] 4. Live Demo: Extracting Findings from Radiology Reports**
+- Walk through a Colab notebook:
+  1. Load a sample radiology report (text).
+  2. Call Claude API with a structured extraction prompt.
+  3. Parse the JSON output.
+  4. Display results in a table: structure, finding, severity.
+- Show how changing the system prompt changes output quality.
+- Show streaming output in real time.
+
+**[5 min] 5. Wrap-Up & Looking Ahead**
+- **Key Takeaway**: LLM APIs are the foundation — messages in, text/structured data out. The agency spectrum shows us how to give LLMs increasing control over workflows.
+- **What We Built Today**: The API layer (`providers.py` in nano-claude-code) — the engine that powers everything.
+- **Next**: Lec. 33 — Tool Use & the Core Agent Loop. We'll teach the LLM to *call functions*, turning it from a text generator into an agent.

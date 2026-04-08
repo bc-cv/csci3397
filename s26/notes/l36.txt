@@ -1,0 +1,167 @@
+**Lecture 36: Putting It All Together — Agentic Biomedical AI**
+
+**Total Time: 50 minutes**
+
+**[5 min] 0. Housekeeping**
+- **Recap**: Over Lec. 32–35 we built a mini Claude Code piece by piece:
+  - Lec. 32: LLM APIs & the agency spectrum (`providers.py`).
+  - Lec. 33: Tool use & the agent loop (`tool_registry.py`, `agent.py`).
+  - Lec. 34: File I/O, Bash, system prompts, compaction (`tools.py`, `context.py`, `compaction.py`).
+  - Lec. 35: RAG, memory, multi-agent, MCP (`memory/`, `multi_agent/`, `mcp/`).
+- **Today**: We zoom out to the full system, see how the pieces fit, discuss what it takes to deploy in a clinical setting, and do a live demo.
+- **Action**: ps4 due; final project slides due.
+
+**[10 min] 1. The Full Architecture — nano-claude-code**
+- **Architecture Diagram** (what we built across 4 lectures):
+  ```
+  ┌─────────────────────────────────────────────────┐
+  │                  REPL / UI                       │
+  │         (nano_claude.py — 1,985 lines)           │
+  │  slash commands, streaming display, permissions  │
+  └────────────────────┬────────────────────────────┘
+                       │
+  ┌────────────────────▼────────────────────────────┐
+  │              Core Agent Loop                     │
+  │           (agent.py — 179 lines)                 │
+  │    while LLM wants to call tools: execute them   │
+  └──┬──────────┬──────────┬──────────┬─────────────┘
+     │          │          │          │
+  ┌──▼──┐  ┌───▼───┐  ┌───▼───┐  ┌──▼──────────┐
+  │Provid│  │ Tool  │  │Context│  │ Compaction  │
+  │ ers  │  │Registry│  │Builder│  │             │
+  │618 L │  │ 98 L  │  │165 L  │  │  196 L      │
+  └──────┘  └───┬───┘  └───────┘  └─────────────┘
+                │
+     ┌──────────┼──────────┬──────────┬──────────┐
+  ┌──▼──┐  ┌───▼───┐  ┌───▼───┐  ┌──▼──┐  ┌────▼───┐
+  │Tools │  │Memory │  │Multi- │  │ MCP │  │Skills/ │
+  │1064L │  │  5 mod│  │Agent  │  │4 mod│  │Plugins │
+  │R/W/E │  │persist│  │thread │  │JSON- │  │markdown│
+  │Bash  │  │search │  │pool   │  │RPC   │  │templat │
+  └──────┘  └───────┘  └───────┘  └─────┘  └────────┘
+  ```
+- **Total core**: ~700 lines (agent + registry + tools + providers + context + compaction).
+- **Total with extensions**: ~5,000 lines of Python — vs. Claude Code's ~283K lines of TypeScript.
+- **The REPL** (`nano_claude.py`):
+  - Interactive loop: read user input → run agent → display streaming output.
+  - Slash commands: `/model`, `/config`, `/memory`, `/save`, `/load`, `/tasks`.
+  - Permission prompts: when the agent wants to write a file or run a command, the REPL asks the user.
+  - Rich markdown rendering with syntax highlighting.
+- **Skills** — reusable prompt templates:
+  - A skill is a Markdown file with YAML frontmatter:
+    ```markdown
+    ---
+    name: commit
+    description: Create a conventional commit
+    triggers: ["/commit"]
+    tools: [Bash, Read]
+    ---
+    Look at staged changes with `git diff --cached`, write a commit message...
+    ```
+  - `/commit` → loads the skill prompt → runs it through the agent loop.
+  - Biomedical example: `/analyze-slide` skill that runs a standard cell counting + morphometry pipeline.
+- **Plugins** — runtime-extensible tools:
+  - Install from git or local path.
+  - Each plugin provides a `tools.py` that registers new tools.
+  - Example: a `dicom-tools` plugin that adds `ReadDICOM`, `ExtractMetadata`, `WindowLevel`.
+
+**[10 min] 2. The Agent Landscape — Where Does This Fit?**
+- **Coding Agents** (what we built):
+  | Agent | Focus | Key Feature |
+  |-------|-------|-------------|
+  | **Claude Code** | General coding (CLI) | Tool use, sub-agents, MCP, permissions |
+  | **Cursor / Windsurf** | IDE-integrated coding | Editor context, inline suggestions |
+  | **Devin** | End-to-end SWE | Browser, terminal, editor in one |
+  | **nano-claude-code** | Educational | Same architecture, 50x less code |
+- **General-Purpose Agent Frameworks**:
+  | Framework | Author | Approach |
+  |-----------|--------|----------|
+  | **smolagents** | HuggingFace | Code agents (LLM writes Python) |
+  | **OpenAI Agents SDK** | OpenAI | Handoffs between specialized agents |
+  | **LangGraph** | LangChain | Graph-based agent workflows |
+  | **CrewAI** | Open source | Role-based multi-agent teams |
+- **Key Architectural Differences**:
+  - **JSON tool calling** (OpenAI, LangChain): LLM outputs JSON → parse → execute. Safe, easy to validate.
+  - **Code agents** (smolagents, Claude Code): LLM writes executable code. More flexible, better composability, needs sandboxing.
+  - **Graph-based** (LangGraph): Predefined state machine with LLM at decision nodes. More predictable, less flexible.
+- **The Trade-Off**: More agency = more capability but less predictability. For clinical use, find the right balance.
+
+**[12 min] 3. Deploying Biomedical AI Agents — From Prototype to Product**
+- **The Deployment Stack**:
+  ```
+  User Interface (web app, CLI, EHR integration)
+       ↓
+  Agent Orchestration (our agent loop)
+       ↓
+  LLM Provider (Claude API, Azure OpenAI, local Ollama)
+       ↓
+  Tools & Data Sources (PACS, EHR, lab systems via MCP)
+       ↓
+  Infrastructure (cloud/on-prem, GPU for local models)
+  ```
+- **Regulatory Considerations**:
+  - **FDA/CE Marking**: If the agent makes or influences clinical decisions, it may be classified as a Software as Medical Device (SaMD).
+    - Class I (low risk): documentation tools, formatting → minimal oversight.
+    - Class II (moderate risk): screening aids, measurement tools → 510(k) clearance.
+    - Class III (high risk): autonomous diagnosis → premarket approval (PMA).
+  - **Key question**: Is the agent a decision-support tool (human decides) or an autonomous system (agent decides)?
+  - Most viable path: **human-in-the-loop** — agent proposes, clinician confirms.
+- **HIPAA / Patient Privacy**:
+  - **PHI (Protected Health Information)**: patient names, dates, MRNs, images with metadata.
+  - **Cloud API risk**: sending PHI to Claude/GPT APIs may violate HIPAA unless a BAA (Business Associate Agreement) is in place.
+  - **Solutions**:
+    - Use API providers with BAA (Anthropic, Azure OpenAI, AWS Bedrock).
+    - De-identify data before sending to the API.
+    - Run local models (Ollama, vLLM) on hospital infrastructure — no data leaves the network.
+  - **Our architecture supports this**: nano-claude-code's `providers.py` abstracts over cloud and local models. Switch from Claude to Ollama with one config change.
+- **Latency & Cost**:
+  - Agent loops involve multiple API calls (one per tool-use cycle). A 5-step analysis = 5 round trips.
+  - Strategies:
+    - Use faster/cheaper models for simple steps (Haiku for file reading, Opus for reasoning).
+    - Cache common queries (RAG results, tool outputs).
+    - Parallelize independent tool calls.
+    - Pre-compute embeddings for the literature database.
+  - Typical cost: $0.01–0.10 per analysis (depending on model and complexity).
+- **Monitoring & Reliability**:
+  - Log every tool call, LLM response, and user interaction.
+  - Track: token usage, latency per step, error rates, user approval/rejection of tool calls.
+  - Alert on: repeated tool failures, context window exhaustion, unexpected tool calls.
+  - **Drift detection**: If the agent's behavior changes (new model version, updated prompts), compare outputs against a validation set.
+- **The Permission Model in Production**:
+  - Our 3-tier model (auto / manual / accept-all) maps to clinical deployment:
+    - `auto`: routine analyses (cell counting, measurements) — run without interruption.
+    - `manual`: anything that modifies patient records or generates reports — require clinician sign-off.
+    - Never `accept-all` in production.
+
+**[8 min] 4. Live Demo: End-to-End Biomedical Analysis**
+- **Scenario**: "Analyze this kidney biopsy cohort — count glomeruli in each slide, measure their areas, search the literature for normal ranges, and generate a summary report."
+- **Walk through the full agent execution**:
+  1. Agent reads MEMORY.md → recalls "kidney biopsy project, Otsu thresholding, 20x magnification."
+  2. Agent calls Glob(`slides/*.tiff`) → finds 10 slides.
+  3. Agent writes `count_glomeruli.py` using scikit-image (watershed segmentation).
+  4. Agent calls Bash(`python count_glomeruli.py`) → gets counts and areas.
+  5. Agent calls SearchLiterature("normal glomerular area range kidney biopsy") → retrieves 3 papers.
+  6. Agent writes the final report as Markdown, including:
+     - Table of per-slide counts and areas.
+     - Comparison to literature normal ranges.
+     - Flagged slides with abnormal findings.
+  7. Agent calls MemorySave to record the analysis parameters for future sessions.
+- **Highlight the components in action**: providers (API call), agent loop (multi-step), tools (Glob, Write, Bash, Read), compaction (if context fills up), memory (recall + save), RAG (literature search).
+
+**[5 min] 5. Wrap-Up & Course Reflection**
+- **What We Built in 5 Lectures**:
+  | Lecture | Component | Lines | What It Does |
+  |---------|-----------|-------|--------------|
+  | 32 | `providers.py` | 618 | Talk to LLMs (any provider) |
+  | 33 | `agent.py` + `tool_registry.py` | 277 | The core loop + tool dispatch |
+  | 34 | `tools.py` + `context.py` + `compaction.py` | 1,425 | Real tools + smart prompts + memory management |
+  | 35 | `memory/` + `multi_agent/` + `mcp/` | ~3,000 | Persistence + parallelism + external systems |
+  | 36 | Full system | ~5,000 | Complete coding agent |
+- **The Arc of the Course**:
+  - Weeks 1–4: **Image processing** — how to manipulate pixels.
+  - Weeks 5–10: **Deep learning** — how to learn from pixels.
+  - Weeks 11–13: **Foundation models** — how to leverage pretrained knowledge.
+  - Weeks 14–16: **Agentic systems** — how to orchestrate all of the above.
+  - The agent we built can *use* everything from the earlier themes: call segmentation models (U-Net from weeks 7–8), apply foundation models (SAM from week 13), and automate the full pipeline.
+- **Key Takeaway**: An AI agent is not magic — it's a while loop, a tool registry, and a good system prompt. Understanding the architecture demystifies tools like Claude Code and empowers you to build domain-specific agents for any biomedical workflow.
+- **Next**: Final project presentations (Fri Apr. 24, Mon Apr. 27, Wed Apr. 29). Good luck!
