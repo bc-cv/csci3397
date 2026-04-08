@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1280">
+  <title>Lec. 30 — Multimodal Foundation Models</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css">
+  <style>
+    :root {
+      --maroon: #800000;
+      --maroon-dark: #5c0000;
+      --gold: #BC9B6A;
+      --ink: #222;
+      --gray: #555;
+      --light: #f5f5f5;
+      --blue: #1a5c8a;
+      --green: #2e7d32;
+    }
+    .reveal {
+      font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--ink);
+    }
+    .reveal .slides {
+      text-align: left;
+    }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+      font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: var(--maroon);
+      text-transform: none;
+      letter-spacing: 0;
+      margin-top: 0;
+    }
+    .reveal h1 { font-size: 2.0em; }
+    .reveal h2 { font-size: 1.5em; }
+    .reveal h3 { font-size: 1.15em; color: var(--blue); }
+    .reveal h4 { font-size: 1.0em;  color: var(--gray); }
+
+    .reveal section { padding: 30px 50px; }
+
+    /* Header bar with section + title */
+    .header-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      background: var(--maroon);
+      color: #fff;
+      padding: 14px 40px;
+      font-size: 0.55em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-bar .section-no {
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .header-bar .section-title {
+      font-weight: 400;
+      opacity: 0.9;
+    }
+
+    /* Footer */
+    .footer {
+      position: absolute;
+      bottom: 8px; left: 40px; right: 40px;
+      font-size: 0.4em;
+      color: var(--gray);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Title slide */
+    .title-slide {
+      background: var(--maroon);
+      color: #fff !important;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 80px;
+    }
+    .title-slide .course {
+      font-size: 0.7em;
+      opacity: 0.85;
+      margin-bottom: 16px;
+    }
+    .title-slide h1 {
+      color: #fff;
+      font-size: 2.4em;
+      margin-bottom: 18px;
+    }
+    .title-slide .subtitle {
+      font-size: 1.0em;
+      opacity: 0.95;
+      margin-bottom: 50px;
+    }
+    .title-slide .meta {
+      font-size: 0.65em;
+      opacity: 0.85;
+    }
+
+    /* Section divider */
+    .section-divider {
+      background: var(--maroon);
+      color: #fff !important;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 100px;
+    }
+    .section-divider h1 {
+      color: #fff;
+      font-size: 2.4em;
+    }
+    .section-divider .section-num {
+      font-size: 1.0em;
+      opacity: 0.7;
+      margin-bottom: 12px;
+    }
+    .section-divider .time {
+      font-size: 0.7em;
+      opacity: 0.85;
+      margin-top: 24px;
+    }
+
+    /* Content lists */
+    .reveal ul, .reveal ol {
+      display: block;
+      margin-left: 0.8em;
+    }
+    .reveal li {
+      margin: 6px 0;
+      line-height: 1.35;
+    }
+    .reveal li li { font-size: 0.92em; color: var(--gray); }
+
+    .reveal .small { font-size: 0.85em; }
+    .reveal .tiny  { font-size: 0.7em; }
+    .reveal em { color: var(--blue); font-style: italic; }
+    .reveal strong { color: var(--ink); }
+    .reveal .accent { color: var(--maroon); font-weight: 700; }
+
+    /* Two-column layout */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+    .two-col .col {
+      background: var(--light);
+      padding: 18px 22px;
+      border-left: 4px solid var(--maroon);
+      border-radius: 4px;
+    }
+    .two-col h3 { margin-top: 0; }
+
+    /* Tables */
+    .reveal table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.65em;
+      margin-top: 10px;
+    }
+    .reveal th, .reveal td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      vertical-align: top;
+    }
+    .reveal th {
+      background: var(--maroon);
+      color: #fff;
+      font-weight: 600;
+    }
+    .reveal tr:nth-child(even) td { background: #fafafa; }
+
+    /* Image placeholder */
+    .img-placeholder {
+      border: 2px dashed #bbb;
+      background: #f9f9f9;
+      color: #999;
+      padding: 30px;
+      text-align: center;
+      border-radius: 6px;
+      font-style: italic;
+      font-size: 0.8em;
+    }
+
+    /* Full-bleed PDF slide image */
+    .pdf-slide {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+    .pdf-slide img {
+      max-width: 100%;
+      max-height: 90vh;
+      object-fit: contain;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .pdf-slide.with-header { padding-top: 56px; }
+    .pdf-slide.with-header img { max-height: 80vh; }
+
+    /* Callout box */
+    .callout {
+      background: #fff8e7;
+      border-left: 4px solid var(--gold);
+      padding: 14px 20px;
+      margin: 14px 0;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    .callout-blue {
+      background: #eef4f9;
+      border-left-color: var(--blue);
+    }
+    .callout-maroon {
+      background: #fbeeee;
+      border-left-color: var(--maroon);
+    }
+
+    /* Chip */
+    .chip {
+      display: inline-block;
+      background: var(--maroon);
+      color: #fff;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      margin-right: 6px;
+    }
+    .chip-blue { background: var(--blue); }
+    .chip-green { background: var(--green); }
+
+    .body { padding-top: 70px; }
+  </style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- ============================================================ -->
+<!-- 1. TITLE SLIDE                                                -->
+<!-- ============================================================ -->
+<section class="title-slide">
+  <div class="course">CSCI 3397 · Biomedical Image Analysis · Spring 2026</div>
+  <h1>Lecture 30<br>Multimodal Foundation Models</h1>
+  <div class="subtitle">CLIP, LLaVA, and the design space of vision-language models</div>
+  <div class="meta">
+    Prof. Donglai Wei · Boston College<br>
+    Wed, Apr. 8, 2026
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 2. HOUSEKEEPING                                               -->
+<!-- ============================================================ -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">0 · HOUSEKEEPING</span>
+    <span class="section-title">3 min</span>
+  </div>
+  <div class="body">
+    <h2>Where we are</h2>
+    <ul>
+      <li><strong>Recap (Lec. 26-29):</strong> Foundation model = Pretraining + Post-training (PEFT) + Prompting.
+      <li><strong>Today:</strong> What if a single model understands <em>both</em> text and images? Multimodal Foundation Models (MFMs).</li>
+    </ul>
+    <div class="callout callout-maroon">
+      <strong>Action:</strong> Lab 9 — Image segmentation (and generation). Due this Fri.
+    </div>
+    <!--h3>Reading</h3>
+    <ul>
+      <li>CLIP — Radford et al., <span class="tiny">arXiv:2103.00020</span></li>
+      <li>LLaVA — Liu et al., <span class="tiny">arXiv:2304.08485</span></li>
+    </ul-->
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>2</span></div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 1: CLIP                                                -->
+<!-- ============================================================ -->
+<section class="section-divider">
+  <div class="section-num">SECTION 1 · 12 min</div>
+  <h1>CLIP: A Discriminative Image-Text Model</h1>
+  <div class="time">Contrastive Language-Image Pretraining</div>
+</section>
+
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 1 · PRETRAINING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-010.png" alt="CLIP slide page 10"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 1 · PRETRAINING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-011.png" alt="CLIP slide page 11"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 1 · PRETRAINING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-012.png" alt="CLIP slide page 12"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 1 · PRETRAINING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-013.png" alt="CLIP slide page 13"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 1 · PRETRAINING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-014.png" alt="CLIP slide page 14"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 1 · PRETRAINING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-015.png" alt="CLIP slide page 15"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 1 · PRETRAINING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-016.png" alt="CLIP slide page 16"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 1 · PRETRAINING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-017.png" alt="CLIP slide page 17"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 1 · PRETRAINING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-018.png" alt="CLIP slide page 18"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 1 · PRETRAINING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-019.png" alt="CLIP slide page 19"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2 · Post-training</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-020.png" alt="CLIP slide page 20"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2 · Post-training</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-021.png" alt="CLIP slide page 21"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2 · Post-training</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-022.png" alt="CLIP slide page 22"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2&prime; &middot; PROMPTING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-023.png" alt="CLIP slide page 23"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2&prime; &middot; PROMPTING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-024.png" alt="CLIP slide page 24"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2&prime; &middot; PROMPTING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-025.png" alt="CLIP slide page 25"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2&prime; &middot; PROMPTING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-026.png" alt="CLIP slide page 26"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2&prime; &middot; PROMPTING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-027.png" alt="CLIP slide page 27"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2&prime; &middot; PROMPTING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-028.png" alt="CLIP slide page 28"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2&prime; &middot; PROMPTING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-029.png" alt="CLIP slide page 29"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2&prime; &middot; PROMPTING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-030.png" alt="CLIP slide page 30"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2&prime; &middot; PROMPTING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-031.png" alt="CLIP slide page 31"></div>
+</section>
+<section>
+  <div class="header-bar"><span class="section-no">STAGE 2&prime; &middot; PROMPTING</span><span class="section-title">CLIP</span></div>
+  <div class="pdf-slide with-header"><img src="figs/stanford_l16/page-032.png" alt="CLIP slide page 32"></div>
+</section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-033.png" alt="CLIP slide page 33"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-034.png" alt="CLIP slide page 34"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-035.png" alt="CLIP slide page 35"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-036.png" alt="CLIP slide page 36"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-037.png" alt="CLIP slide page 37"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-038.png" alt="CLIP slide page 38"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-039.png" alt="CLIP slide page 39"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-040.png" alt="CLIP slide page 40"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-041.png" alt="CLIP slide page 41"></div></section>
+
+<!-- 2.1 Goal & architecture 
+<section>
+  <div class="header-bar">
+    <span class="section-no">1 · CLIP</span>
+    <span class="section-title">Architecture</span>
+  </div>
+  <div class="body">
+    <h2>Two encoders, one shared embedding space</h2>
+    <ul>
+      <li><strong>Goal:</strong> learn a shared embedding space where matching images and texts are close.</li>
+      <li><strong>Image encoder:</strong> ViT or ResNet → image embedding</li>
+      <li><strong>Text encoder:</strong> Transformer → text embedding</li>
+      <li>Both project to the same dimension; <strong>cosine similarity</strong> measures alignment</li>
+    </ul>
+    <div class="img-placeholder">
+      [ image placeholder — CLIP dual-encoder diagram ]
+    </div>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>11</span></div>
+</section>
+-->
+<!-- 2.2 Contrastive loss 
+<section>
+  <div class="header-bar">
+    <span class="section-no">1 · CLIP</span>
+    <span class="section-title">Training objective</span>
+  </div>
+  <div class="body">
+    <h2>Symmetric contrastive loss</h2>
+    <ul>
+      <li>Take a batch of <strong>N</strong> (image, text) pairs</li>
+      <li>Compute the <strong>N×N similarity matrix</strong> between all images and all texts</li>
+      <li><strong>Maximize</strong> diagonal entries (matched pairs)</li>
+      <li><strong>Minimize</strong> off-diagonal entries (unmatched pairs)</li>
+      <li>Symmetric cross-entropy: rows (image → text) + columns (text → image)</li>
+    </ul>
+    <div class="img-placeholder">
+      [ image placeholder — CLIP N×N similarity matrix figure ]
+    </div>
+    <p class="small"><strong>Training data:</strong> 400M image–text pairs from the web (WebImageText / WIT).</p>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>12</span></div>
+</section>
+-->
+<!-- 2.3 Zero-shot inference 
+<section>
+  <div class="header-bar">
+    <span class="section-no">1 · CLIP</span>
+    <span class="section-title">Zero-shot inference</span>
+  </div>
+  <div class="body">
+    <h2>Classification without training labels</h2>
+    <ol>
+      <li>Encode candidate class names as text prompts: <code>"a photo of a {class}"</code></li>
+      <li>Encode the input image</li>
+      <li>Pick the class whose text embedding is closest to the image embedding</li>
+    </ol>
+    <div class="img-placeholder">
+      [ image placeholder — CLIP zero-shot inference diagram ]
+    </div>
+    <div class="callout callout-blue">
+      <strong>Result:</strong> matches a fully-supervised ResNet-50 on ImageNet — <em>without training on ImageNet labels.</em>
+    </div>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>13</span></div>
+</section>
+-->
+<!-- 2.4 Why it works + design space placement 
+<section>
+  <div class="header-bar">
+    <span class="section-no">1 · CLIP</span>
+    <span class="section-title">Why it works</span>
+  </div>
+  <div class="body">
+    <h2>Natural language is a richer supervision signal</h2>
+    <ul>
+      <li>Fixed labels (e.g., 1000 ImageNet classes) compress everything into a categorical id</li>
+      <li>Natural language captions encode <em>attributes, relations, context, intent</em></li>
+      <li>Open vocabulary at training time → open vocabulary at inference time</li>
+    </ul>
+    <div class="callout callout-maroon">
+      <strong>Where CLIP sits in the design space:</strong>
+      <span class="chip">Image-Text input</span>
+      <span class="chip">Shared embedding (early fusion)</span>
+      <span class="chip">Discriminative output</span>
+      <span class="chip">Contrastive pretraining</span>
+    </div>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>14</span></div>
+</section>
+-->
+<!-- ============================================================ -->
+<!-- SECTION 2: LLaVA                                               -->
+<!-- ============================================================ -->
+<section class="section-divider">
+  <div class="section-num">SECTION 2 · 12 min</div>
+  <h1>LLaVA: A Generative Image-Text Model</h1>
+  <div class="time">Large Language and Vision Assistant</div>
+</section>
+
+<!-- 3.1 The limit of CLIP -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">2 · LLaVA</span>
+    <span class="section-title">Motivation</span>
+  </div>
+  <div class="body">
+    <h2>The limit of CLIP</h2>
+    <ul>
+      <li>CLIP can <em>match</em> images to texts, but it cannot <strong>generate</strong> text</li>
+      <li>It cannot answer free-form questions, hold a conversation, or reason step by step</li>
+      <li>What we want: a model that <strong>sees</strong> and <strong>talks</strong></li>
+    </ul>
+    <div class="callout callout-blue">
+      <strong>Idea:</strong> bolt a vision encoder onto a pretrained LLM. Reuse all the language reasoning we already have.
+    </div>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>15</span></div>
+</section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-057.png" alt="LLaVA slide page 57"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-058.png" alt="LLaVA slide page 58"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-059.png" alt="LLaVA slide page 59"></div></section>
+<!--section><div class="pdf-slide"><img src="figs/stanford_l16/page-060.png" alt="LLaVA slide page 60"></div></section-->
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-061.png" alt="LLaVA slide page 61"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-062.png" alt="LLaVA slide page 62"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-063.png" alt="LLaVA slide page 63"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-064.png" alt="LLaVA slide page 64"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-065.png" alt="LLaVA slide page 65"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-066.png" alt="LLaVA slide page 66"></div></section>
+<section><div class="pdf-slide"><img src="figs/stanford_l16/page-067.png" alt="LLaVA slide page 67"></div></section>
+
+
+<!-- 3.2 LLaVA architecture 
+<section>
+  <div class="header-bar">
+    <span class="section-no">2 · LLaVA</span>
+    <span class="section-title">Architecture</span>
+  </div>
+  <div class="body">
+    <h2>Vision encoder + projector + LLM</h2>
+    <ul>
+      <li><strong>Vision encoder:</strong> pretrained CLIP ViT (frozen)</li>
+      <li><strong>Projector:</strong> a lightweight linear/MLP layer that maps image features into the LLM's token space</li>
+      <li><strong>LLM:</strong> pretrained Vicuna / LLaMA (decoder-only)</li>
+      <li>The LLM "sees" images as a sequence of <strong>visual tokens</strong> prepended to the text input</li>
+    </ul>    
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>16</span></div>
+</section>
+-->
+<!-- 3.3 Two-stage training -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">2 · LLaVA</span>
+    <span class="section-title">Training</span>
+  </div>
+  <div class="body">
+    <h2>Two-stage post-training</h2>
+    <div class="two-col">
+      <div class="col">
+        <h3>Stage 1 — Feature alignment</h3>
+        <ul>
+          <li>Train <strong>only the projector</strong></li>
+          <li>Vision encoder + LLM <em>frozen</em></li>
+          <li>Data: image–caption pairs</li>
+          <li>Goal: map visual features into the LLM's token space</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Stage 2 — Instruction tuning</h3>
+        <ul>
+          <li>Fine-tune projector + LLM</li>
+          <li>Data: multimodal instruction-following examples (visual Q&amp;A, reasoning)</li>
+          <li>Goal: respond like a helpful visual assistant</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout">
+      <strong>Key insight:</strong> a frozen LLM + a small projector is enough to inherit language reasoning for visual inputs — extremely cheap to train.
+    </div>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>17</span></div>
+</section>
+
+<!-- 3.4 Capabilities + design space placement -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">2 · LLaVA</span>
+    <span class="section-title">Capabilities</span>
+  </div>
+  <div class="body">
+    <h2>What LLaVA can do</h2>
+    <ul>
+      <li><strong>Describe</strong> an image in natural language</li>
+      <li><strong>Answer</strong> questions about image content</li>
+      <li><strong>Reason</strong> about images: "why is this funny?", "what should I do next?"</li>
+      <li>Hold a multi-turn conversation grounded in an image</li>
+    </ul>    
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>18</span></div>
+</section>
+
+<section><div class="pdf-slide"><img src="figs/l30/llava_demo.png" alt="LLaVA demo"></div></section>
+
+<!-- 3.5 CLIP vs LLaVA -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">2 · LLaVA</span>
+    <span class="section-title">CLIP vs. LLaVA</span>
+  </div>
+  <div class="body">
+    <h2>Two points in the same design space</h2>
+    <table>
+      <thead>
+        <tr><th></th><th>CLIP</th><th>LLaVA</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Encoders</strong></td><td>2 (image + text)</td><td>1 vision encoder + projector + LLM decoder</td></tr>
+        <tr><td><strong>Fusion</strong></td><td>shared embedding (early)</td><td>decoder fusion (visual tokens + text tokens)</td></tr>
+        <tr><td><strong>Pretraining</strong></td><td>contrastive on 400M pairs</td><td>caption alignment + instruction tuning</td></tr>
+        <tr><td><strong>Output</strong></td><td>similarity score</td><td>free-form text</td></tr>
+        <tr><td><strong>Best for</strong></td><td>classification, retrieval</td><td>VQA, conversation, reasoning</td></tr>
+      </tbody>
+    </table>
+    <p class="small" style="margin-top:14px;">Same modalities — radically different capabilities, driven entirely by design choices.</p>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>19</span></div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: DESIGN SPACES                                      -->
+<!-- ============================================================ -->
+<section class="section-divider">
+  <div class="section-num">SECTION 3 · 15 min</div>
+  <h1>The Design Space of Multimodal Foundation Models</h1>
+  <div class="time">Five dimensions that shape every MFM</div>
+</section>
+
+<!-- 1.0 Roadmap -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">3 · DESIGN SPACES</span>
+    <span class="section-title">Roadmap</span>
+  </div>
+  <div class="body">
+    <h2>Before we dive into models...</h2>
+    <p>Every MFM is a <em>point in a 5-dimensional design space</em>. Understanding the dimensions lets us compare any two models — and reason about new ones.</p>
+    <ol>
+      <li><strong>Input / Modalities</strong> — what goes in?</li>
+      <li><strong>Method / Architecture</strong> — how are modalities combined?</li>
+      <li><strong>Output / Task</strong> — what comes out?</li>
+      <li><strong>Pretraining / Supervision</strong> — how is it trained?</li>
+      <li><strong>Prompt / Instruction</strong> — how do users interact?</li>
+    </ol>
+    <div class="callout">
+      Today's models — <span class="chip">CLIP</span> <span class="chip chip-blue">LLaVA</span> — pick very different points in this space.
+    </div>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>3</span></div>
+</section>
+
+<!-- 1.1 Input modalities -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">3.1 · INPUT / MODALITIES</span>
+    <span class="section-title">What goes in?</span>
+  </div>
+  <div class="body">
+    <h2>Input modalities define the task</h2>
+    <table>
+      <thead>
+        <tr><th style="width:22%">Combination</th><th style="width:38%">Examples</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Image + Text</strong></td><td>CLIP, BLIP, Flamingo</td><td>Most common; cross-modal retrieval, captioning, VQA</td></tr>
+        <tr><td><strong>Image + Text + Action</strong></td><td>Robotics, instruction following</td><td>Adds temporal / interactive modalities</td></tr>
+        <tr><td><strong>Video + Text</strong></td><td>Video-LLaMA, VideoChat</td><td>Captures dynamics and sequence</td></tr>
+        <tr><td><strong>Audio + Text / Speech</strong></td><td>Whisper, AudioCLIP</td><td>Multimodal speech understanding</td></tr>
+        <tr><td><strong>Point cloud / 3D + Text</strong></td><td>Lidar + instructions, 3D scene description</td><td>Robotics, AR/VR</td></tr>
+        <tr><td><strong>Multimodal-ALL</strong></td><td>Kosmos-2, Gato</td><td>Task-agnostic pretraining with &gt;2 modalities</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>4</span></div>
+</section>
+
+<!-- 1.2 Architecture -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">3.2 · METHOD / ARCHITECTURE</span>
+    <span class="section-title">How are modalities combined?</span>
+  </div>
+  <div class="body">
+    <h2>Five fusion strategies</h2>
+    <table>
+      <thead>
+        <tr><th style="width:30%">Approach</th><th style="width:45%">Description</th><th>Examples</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Separate encoders + fusion</strong></td><td>Each modality has its own encoder; fused via cross-attention or concatenation</td><td>Flamingo, BLIP-2</td></tr>
+        <tr><td><strong>Shared encoder (early fusion)</strong></td><td>Modalities mapped into a shared embedding space at the encoder level</td><td><span class="accent">CLIP</span>, ALIGN</td></tr>
+        <tr><td><strong>Encoder-decoder (Seq2Seq)</strong></td><td>Encode modalities, then autoregressively decode outputs</td><td><span class="accent">LLaVA</span>, VideoChat</td></tr>
+        <tr><td><strong>Cross-attention transformers</strong></td><td>One modality is the query, another is key/value</td><td>Flamingo, Kosmos-2</td></tr>
+        <tr><td><strong>Mixture-of-modality experts</strong></td><td>Experts specialize per modality; gating fuses outputs</td><td>Gato</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>5</span></div>
+</section>
+
+<!-- 1.3 Output / Task -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">3.3 · OUTPUT / TASK</span>
+    <span class="section-title">What comes out?</span>
+  </div>
+  <div class="body">
+    <h2>Output determines the model class</h2>
+    <ul>
+      <li><strong>Discriminative outputs</strong> — classification, retrieval, similarity scores</li>
+      <li><strong>Generative outputs</strong> — text, images, video, 3D, control/action</li>
+      <li><strong>Structured outputs</strong> — segmentation masks, bounding boxes, keypoints</li>
+    </ul>
+    <div class="callout callout-blue">
+      Many MFMs are <em>promptable</em>, just like LLMs:
+      <ul style="margin-top:6px;">
+        <li>Text query → image / video / 3D reasoning</li>
+        <li>Image → caption → answer / action</li>
+        <li>Multimodal instructions → robotic task</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>6</span></div>
+</section>
+
+<!-- 1.4 Pretraining -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">3.4 · PRETRAINING / SUPERVISION</span>
+    <span class="section-title">How is it trained?</span>
+  </div>
+  <div class="body">
+    <h2>Pretraining objectives</h2>
+    <div class="two-col">
+      <div class="col">
+        <h3>Self-supervised</h3>
+        <ul>
+          <li>Masked modeling (predict hidden tokens)</li>
+          <li>Contrastive alignment (pull matching pairs together)</li>
+          <li>Reconstruction (autoencoders, MAE)</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3>Supervised</h3>
+        <ul>
+          <li>Paired datasets (image–caption, image–QA)</li>
+          <li>Instruction tuning</li>
+          <li>RLHF on multimodal preferences</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout">
+      Modern MFMs typically <strong>mix objectives</strong>: contrastive + generative + retrieval, often in stages.
+    </div>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>7</span></div>
+</section>
+
+<!-- 1.5 Prompt / Instruction -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">3.5 · PROMPT / INSTRUCTION</span>
+    <span class="section-title">How do users interact?</span>
+  </div>
+  <div class="body">
+    <h2>Prompting modalities</h2>
+    <ul>
+      <li><strong>Text prompts</strong> — natural language queries (most common)</li>
+      <li><strong>Visual prompts</strong> — points, boxes, masks (Lec. 29 — SAM)</li>
+      <li><strong>Multimodal prompts</strong> — text + image together (e.g., "describe what's wrong with this X-ray")</li>
+      <li><strong>Structured prompts</strong> — JSON schemas, function calls, tool use</li>
+    </ul>
+    <div class="callout callout-blue">
+      <strong>Key idea:</strong> the prompt is the interface. Same model, different prompts → different tasks.
+    </div>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>8</span></div>
+</section>
+
+<!-- 1.6 Summary table -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">3 · DESIGN SPACES</span>
+    <span class="section-title">Summary</span>
+  </div>
+  <div class="body">
+    <h2>The 5-dimensional design space</h2>
+    <table>
+      <thead><tr><th style="width:32%">Design Space</th><th>Options / Variations</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Input modalities</strong></td><td>image, text, video, audio, 3D / point cloud, combinations</td></tr>
+        <tr><td><strong>Encoder strategy</strong></td><td>separate encoders, shared encoder, mixture-of-experts</td></tr>
+        <tr><td><strong>Fusion strategy</strong></td><td>early fusion, late fusion, cross-attention, decoder fusion</td></tr>
+        <tr><td><strong>Task / output</strong></td><td>classification, retrieval, generation, segmentation, action prediction</td></tr>
+        <tr><td><strong>Pretraining objective</strong></td><td>contrastive, masked modeling, generative, multi-task</td></tr>
+        <tr><td><strong>Prompt / instruction</strong></td><td>text, visual, multimodal, structured</td></tr>
+      </tbody>
+    </table>
+    <div class="callout">
+      <strong>Intuition:</strong> Designing an MFM = choose modalities → choose encoders → choose fusion → choose output → choose pretraining objective. Then scale up data &amp; compute.
+    </div>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>9</span></div>
+</section>
+
+<!-- 1.7 Today's focus -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">3 · DESIGN SPACES</span>
+    <span class="section-title">Today's focus</span>
+  </div>
+  <div class="body">
+    <h2>Two image-text MFMs that bracket the design space</h2>
+    <div class="two-col">
+      <div class="col">
+        <h3><span class="chip">CLIP</span> Discriminative</h3>
+        <ul>
+          <li>Dual encoder, no fusion</li>
+          <li>Contrastive pretraining</li>
+          <li>Output: similarity score</li>
+          <li>Use: zero-shot classification, retrieval</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3><span class="chip chip-blue">LLaVA</span> Generative</h3>
+        <ul>
+          <li>Encoder + projector + LLM</li>
+          <li>Instruction tuning</li>
+          <li>Output: free-form text</li>
+          <li>Use: VQA, conversation, reasoning</li>
+        </ul>
+      </div>
+    </div>
+    <p class="small" style="margin-top:18px;">Same modalities, very different design choices → very different capabilities.</p>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>10</span></div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION 5: WRAP-UP                                             -->
+<!-- ============================================================ -->
+<section>
+  <div class="header-bar">
+    <span class="section-no">5 · WRAP-UP</span>
+    <span class="section-title">Key takeaway</span>
+  </div>
+  <div class="body">
+    <h2>One framework, many points</h2>
+    <ul>
+      <li>Every MFM is a point in a <strong>5-dimensional design space</strong>: modalities × architecture × output × pretraining × prompting</li>
+      <li><strong>CLIP</strong> and <strong>LLaVA</strong> show two very different points — discriminative vs. generative — built from the same image-text ingredients</li>
+      <li>Design choices, not modalities, decide what a model can do</li>
+    </ul>
+    <h3>The Theme 3 arc so far</h3>
+    <p class="small">
+      Lec. 27 <strong>Pretrain</strong> (SSL) → Lec. 28 <strong>Adapt</strong> (PEFT) → Lec. 29 <strong>Prompt</strong> (SAM) → <span class="accent">Lec. 30 <strong>Combine modalities</strong></span>
+    </p>
+  </div>
+  <div class="footer"><span>Lec. 30 · Multimodal FMs</span><span>22</span></div>
+</section>
+
+<!-- Looking ahead -->
+<section class="section-divider">
+  <div class="section-num">NEXT TIME</div>
+  <h1>Lec. 31 — Multimodal FMs in Biomedicine</h1>
+  <div class="time">PathChat · BiomedCLIP · radiology report drafting · pathology Q&amp;A</div>
+</section>
+
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    width: 1280,
+    height: 800,
+    margin: 0.04,
+    hash: true,
+    slideNumber: false,
+    transition: 'none',
+    controls: true,
+    progress: true,
+  });
+</script>
+</body>
+</html>
