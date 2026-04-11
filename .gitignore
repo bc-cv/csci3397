@@ -7,3 +7,5 @@ s26/lab/*.jpg
 s26/lab/*.gif
 s26/lab/*.png
 s26/notes/figs
+*/slides
+.DS_Store

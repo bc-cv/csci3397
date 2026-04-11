@@ -1,0 +1,140 @@
+**Lecture 31: Multimodal Foundation Models in Biomedicine**
+
+**Total Time: 50 minutes**
+
+**[3 min] 0. Housekeeping**
+- **Recap**: Lec. 30 — CLIP (discriminative, contrastive) and LLaVA (generative, instruction-tuned). Two points in the 5D design space of multimodal FMs.
+- **Today**: What happens when we bring these ideas into biomedicine? Two papers: BiomedCLIP (discriminative) and SlideChat (generative).
+- **Reading**: BiomedCLIP (Zhang et al., arXiv:2303.00915); SlideChat (Chen et al., arXiv:2410.11761).
+
+---
+
+**[8 min] 1. The Domain Gap Problem**
+
+*Why can't we just use CLIP on medical images?*
+
+**1.1 Three failure modes of general-purpose CLIP in medicine**
+- **Visual domain gap**: Web photos ≠ histopathology, X-rays, CT, microscopy. CLIP's image encoder has never seen H&E stains or radiology.
+- **Vocabulary gap**: Clinical terms (e.g., "squamous cell carcinoma", "pleural effusion") barely appear in web image-text data. CLIP's text encoder (trained on web text) struggles with biomedical language.
+- **Data gap**: Existing biomedical image-text datasets are tiny — MIMIC-CXR: 377K pairs, CheXpert: 224K, ROCO: 88K — and almost all are chest X-ray only. General CLIP was trained on 400M pairs.
+
+**1.2 Two strategies to close the gap**
+- **Domain-adapted discriminative model**: Retrain CLIP on massive biomedical data → BiomedCLIP (this lecture).
+- **Domain-adapted generative model**: Build a LLaVA-style model for whole-slide pathology images → SlideChat (this lecture).
+- Parallel to Lec. 30: one discriminative, one generative — but now domain-specific.
+
+---
+
+**[15 min] 2. BiomedCLIP: Domain-Adapted Discriminative Model**
+
+*(Zhang et al., Microsoft Research, 2023. arXiv:2303.00915)*
+
+**2.1 Key idea**
+- Same CLIP architecture (dual encoder, contrastive loss) but pretrained on biomedical data.
+- If the data is large enough and diverse enough, a domain-specific CLIP can beat both general-domain CLIP and radiology-only models.
+
+**2.2 PMC-15M: The dataset that makes it work**
+- Source: PubMed Central Open Access — 4.4 million publicly available full-text scientific articles.
+- Extract every figure + its caption → 15 million biomedical image-text pairs.
+- **100× larger** than prior biomedical datasets (MIMIC-CXR: 377K).
+- Covers **30 biomedical image types**: radiology, pathology, dermatology, microscopy, charts, graphs, surgical photos, etc.
+- Key insight: scientific papers are a massive, free, diverse, high-quality source of paired biomedical image-text data.
+- PMC-Fine-Grained-46M: further split compound figures into sub-figures with matched sub-captions (46M pairs).
+
+**2.3 Architecture adaptations**
+- **Image encoder**: ViT-B (same as CLIP), but adapted for biomedical images which are larger than web images (336px input instead of 224px).
+- **Text encoder**: Replace CLIP's general-domain text encoder with **PubMedBERT** — a language model pretrained on biomedical literature. Handles clinical vocabulary, abbreviations, medical concepts.
+- **Training**: Standard CLIP contrastive loss on PMC-15M. Domain-specific adaptations in the tokenizer and encoder, not in the objective.
+
+**2.4 Results: Why scale + diversity matters**
+- Evaluated on 8 standard biomedical benchmarks spanning retrieval, classification, and VQA.
+- **Cross-modal retrieval**: BiomedCLIP top-1 accuracy 56% vs. general CLIP's 77% → wait, BiomedCLIP wins: recall@5 >96% on PMC test set. General CLIP performs poorly in biomedical domain.
+- **Image classification** (zero-shot): SOTA on PatchCamelyon (pathology), LC25000 (histopathology), TCGA-TIL. Beats PubMedCLIP and general CLIP by a wide margin.
+- **Surprise**: BiomedCLIP beats **radiology-specific** models (BioViL) on RSNA pneumonia detection — despite not being radiology-specific. Pretraining on diverse biomedical types creates positive transfer.
+- **VQA**: Competitive with instruction-tuned models on VQA-RAD and SLAKE.
+
+**2.5 Privacy-preserving analysis**
+- Use PMC-15M images (public) as proxies for proprietary patient data.
+- Retrieve most similar public images → run analysis on public proxies → no PHI leaves the hospital.
+- Validated: BiomedCLIP retrieval + GPT-4 analysis on public proxies achieves reasonable agreement with direct analysis of proprietary CXR data.
+
+**2.6 Design space placement**
+- Same design point as CLIP: Image-Text input · Shared embedding · Discriminative · Contrastive pretraining.
+- What changed: the **data** (PMC-15M) and the **text encoder** (PubMedBERT). Architecture and objective unchanged.
+- Lesson: in the foundation model era, **data >> architecture tweaks** for domain adaptation.
+
+---
+
+**[15 min] 3. SlideChat: Generative Model for Whole-Slide Pathology**
+
+*(Chen et al., Shanghai AI Lab / Stanford, 2024. arXiv:2410.11761)*
+
+**3.1 The whole-slide challenge**
+- Whole-slide images (WSIs) in pathology are **gigapixel**: 100,000 × 100,000 pixels.
+- Existing pathology MLLMs (PathChat, LLaVA-Med) work on **patches or thumbnails** — they see a tree, not the forest.
+- Clinical decisions (staging, grading, differential diagnosis) require **global context** across the entire slide.
+- Challenge: how to feed a 100K×100K image into a vision-language model?
+
+**3.2 Architecture: hierarchical encoding**
+- **Step 1 — Patching**: Divide WSI into a grid of 224×224 patches (potentially thousands of patches).
+- **Step 2 — Patch-level encoder**: Frozen CONCH encoder extracts features from each patch (local details: cell morphology, tissue texture).
+- **Step 3 — Slide-level encoder**: LongNet with **sparse attention** aggregates patch features into a slide-level representation. Captures global patterns (tumor spread, tissue architecture, margins) without O(n²) cost.
+- **Step 4 — Multimodal projector**: Maps slide-level features into LLM's token space (same idea as LLaVA's projector).
+- **Step 5 — LLM**: Qwen2.5-7B-Instruct generates text responses conditioned on visual tokens + text query.
+
+**3.3 SlideInstruction: the training data**
+- No large-scale WSI instruction dataset existed → they built one from TCGA (The Cancer Genome Atlas).
+- 4,915 WSI-report pairs from 4,028 patients, 10 cancer types.
+- Pipeline: GPT-4 cleans pathology reports → generates:
+  - 4.2K WSI-caption pairs
+  - 176K VQA pairs (open-ended + closed-ended)
+  - Covers 13 subcategories: microscopy, diagnosis, clinical
+- **20× larger** than prior WSI instruction datasets.
+
+**3.4 Two-stage training** (same recipe as LLaVA)
+- **Stage 1 — Cross-domain alignment**: Train slide-level encoder + projector on WSI-caption pairs. Patch encoder + LLM frozen.
+- **Stage 2 — Visual instruction learning**: Fine-tune slide encoder + projector + LLM on 176K VQA pairs. Full model learns to answer pathology questions.
+
+**3.5 SlideBench: the benchmark**
+- SlideBench-Caption: 734 WSIs, free-form captioning (BLEU, ROUGE, GPT-score).
+- SlideBench-VQA (TCGA): 7,827 VQA pairs, 13 tasks (microscopy, diagnosis, clinical).
+- SlideBench-VQA (BCNB): 7,274 pairs from breast cancer biopsies, 7 tasks — external validation.
+
+**3.6 Results**
+- SOTA on **18 of 22 tasks** across all benchmarks.
+- SlideBench-VQA (TCGA): **81.17%** overall accuracy (+13.47% over second-best model).
+- Beats GPT-4o (57.91% with patches), MedDr (67.70%), LLaVA-Med (42.00%).
+- Key finding: **patch-based models fail on slide-level tasks**. GPT-4o with slide thumbnail scores only 34.07%. SlideChat with full slide: 81.17%.
+- Captioning: BLEU-1 = 0.37, GPT-score = 4.11 (competitive with MI-Gen, purpose-built for captioning).
+
+**3.7 Design space placement**
+- Same design point as LLaVA: Image-Text input · Separate encoders + decoder fusion · Generative · Instruction tuning.
+- Key innovations: **hierarchical visual encoding** (patch → slide) to handle gigapixel input, and **domain-specific training data** (SlideInstruction from TCGA).
+
+---
+
+**[7 min] 4. Broader Landscape & Discussion**
+
+**4.1 The emerging pattern**
+- General-domain FM (CLIP/LLaVA) → domain adaptation → biomedical FM (BiomedCLIP/SlideChat).
+- Two levers for domain adaptation: (1) **data** — curate large domain-specific datasets (PMC-15M, SlideInstruction), (2) **architecture** — handle domain-specific inputs (gigapixel WSIs → hierarchical encoding).
+- Common theme: **two-stage training** shows up everywhere (CLIP→BiomedCLIP pretraining, LLaVA→SlideChat alignment + instruction tuning).
+
+**4.2 Other biomedical multimodal FMs** (brief mentions)
+- **PathChat** (Lu et al., 2024): pathology conversational model, 450K private instruction pairs. Strong but closed-source data.
+- **LLaVA-Med**: LLaVA fine-tuned on biomedical data. Works for radiology VQA but limited on pathology WSIs.
+- **MedDr**: Medical diagnosis reasoning, competitive on patch-based tasks.
+- **BioViL**: Radiology-specific contrastive model. Good on CXR but narrow.
+
+**4.3 Open questions for students**
+- How do you handle images that are 100,000× larger than typical inputs? (SlideChat's answer: hierarchical patching + sparse attention.)
+- When is data curation more impactful than architecture innovation? (BiomedCLIP's answer: almost always.)
+- Should biomedical FMs use public data (PMC) or private clinical data? Trade-offs: scale vs. quality, access vs. privacy.
+
+---
+
+**[2 min] 5. Wrap-Up**
+- **BiomedCLIP**: Same CLIP recipe, domain-adapted via PMC-15M (15M pairs, 30 image types) + PubMedBERT text encoder. Discriminative. SOTA across retrieval, classification, VQA.
+- **SlideChat**: LLaVA-style model scaled to gigapixel WSIs via hierarchical encoding (patch → slide → LLM). First model that truly understands whole slides. SOTA on 18/22 pathology tasks.
+- **Pattern**: Domain adaptation of multimodal FMs = large domain-specific data + architecture adaptations for domain-specific inputs.
+- **Next**: Theme 4 — Agentic Systems. Building a mini Claude Code.
