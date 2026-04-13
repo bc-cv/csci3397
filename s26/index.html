@@ -732,17 +732,18 @@ BiomedCLIP, SlideChat; domain adaptation, whole-slide pathology
 <td>Mon, Apr. 13</td>
 <td class="topic">
 <a href="notes/l32.txt">Lec. 32: LLM APIs & the Agency Spectrum</a>
+ | <a href="https://www.dropbox.com/scl/fi/81iu2pq2wmv643i6d2vyq/l32_slides.pdf?rlkey=87s0s05sbo2qgr7cz3ruy5o6z&dl=0">slides</a>
 <div class="subtopic">
-API basics (messages, streaming, tokens), the agency spectrum (processor → router → tool call → agent → multi-agent),
-prompt engineering for medical text
-<br/><font color=#800000>extracting structured findings from radiology reports</font>
+What/Why/How of agents. AI evolution: role of language (DL → FM → Agent).
+Agency spectrum. LLM API basics (5 things: API call, tokens, dialog, structured output, vision).
+<br/><font color=#800000>nano-claude-code: <code>config.py</code></font>
 </div>
 </td>
 <td>
 <ul class="materials">
   <li>Concept: <a href="https://huggingface.co/docs/smolagents/conceptual_guides/intro_agents">smolagents: intro to agents</a></li>
   <li>Coding: <a href="https://docs.anthropic.com/en/docs/initial-setup">Anthropic API quickstart</a></li>
-  <li>Reference: <a href="https://github.com/anthropics/anthropic-cookbook">Anthropic cookbook</a></li>
+  <li>Code: <a href="https://github.com/SafeRL-Lab/cheetahclaws/tree/79aefea578ca564658edc9d8eebe1c532f7affc6">nano-claude-code</a></li>
 </ul>
 </td>
 <td>ps4 out (agentic systems)</td>
@@ -751,17 +752,17 @@ prompt engineering for medical text
 
 <td>Wed, Apr. 15</td>
 <td class="topic">
-<a href="notes/l33.txt">Lec. 33: Tool Use & the Core Agent Loop</a>
+<a href="notes/l33.txt">Lec. 33: Tool Use & the Agent Loop</a>
 <div class="subtopic">
-tool schemas (JSON), tool dispatch, the ReAct loop (Think → Act → Observe),
-code agents vs. JSON agents
-<br/><font color=#800000>agent with cell-counting and measurement tools</font>
+Tool schemas (JSON), tool dispatch, the agent while-loop (ReAct),
+permission system, context (CLAUDE.md), full REPL
+<br/><font color=#800000>nano-claude-code: <code>tools.py</code>, <code>agent.py</code>, <code>context.py</code>, <code>nano_claude.py</code></font>
 </div>
 </td>
 <td>
 <ul class="materials">
   <li>Tutorial: <a href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use">Claude tool use</a></li>
-  <li>Code: <a href="https://github.com/donglaiw/nano-claude-code">nano-claude-code</a> (<code>agent.py</code>, <code>tool_registry.py</code>)</li>
+  <li>Code: <a href="https://github.com/SafeRL-Lab/cheetahclaws/tree/79aefea578ca564658edc9d8eebe1c532f7affc6">nano-claude-code</a></li>
 </ul>
 </td>
 <td><font color=#800000>lab10 due</font></td>
@@ -770,16 +771,16 @@ code agents vs. JSON agents
 
 <td>Fri, Apr. 17</td>
 <td class="topic">
-<a href="notes/l34.txt">Lec. 34: Coding Agent with File I/O & Bash</a>
+<a href="notes/l34.txt">Lec. 34: Multi-Agent & Biomedical Agents</a>
 <div class="subtopic">
-Read/Write/Edit/Bash tools, system prompt engineering, context window management,
-permission gates and safety
-<br/><font color=#800000>agent that writes and runs image analysis scripts</font>
+Sub-agent spawning, parallel execution, biomedical agent applications
+(self-driving labs, clinical workflows, research agents)
+<br/><font color=#800000>nano-claude-code: <code>subagent.py</code></font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Code: <a href="https://github.com/donglaiw/nano-claude-code">nano-claude-code</a> (<code>tools.py</code>, <code>context.py</code>, <code>compaction.py</code>)</li>
+  <li>Code: <a href="https://github.com/SafeRL-Lab/cheetahclaws/tree/7f3abb7">nano-claude-code (subagent)</a></li>
   <li>Reference: <a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview">Prompt engineering guide</a></li>
 </ul>
 </td>
@@ -789,17 +790,16 @@ permission gates and safety
 <tr>
 <td>Tue, Apr. 21 <br />(Mon class)</td>
 <td class="topic">
-<a href="notes/l35.txt">Lec. 35: RAG, Memory & Multi-Agent Systems</a>
+<a href="notes/l35.txt">Lec. 35: Code Agent — Production Architecture</a>
 <div class="subtopic">
-RAG as a tool (embeddings, vector search), persistent memory, sub-agents,
-MCP protocol for external systems
-<br/><font color=#800000>multi-agent pathology pipeline: search → analyze → report</font>
+Claude Code architecture (184 tools, 207 commands, 5 sub-agent types),
+runtime pipeline (setup → route → execute → stream), reverse engineering
+<br/><font color=#800000>claw-code: architectural blueprint of Claude Code</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Code: <a href="https://github.com/donglaiw/nano-claude-code">nano-claude-code</a> (<code>memory/</code>, <code>multi_agent/</code>, <code>mcp/</code>)</li>
-  <li>Concept: <a href="https://docs.llamaindex.ai/en/stable/">LlamaIndex RAG tutorial</a></li>
+  <li>Code: <a href="https://github.com/ultraworkers/claw-code">claw-code</a></li>
   <li>Spec: <a href="https://modelcontextprotocol.io/">Model Context Protocol</a></li>
 </ul>
 </td>
@@ -809,18 +809,16 @@ MCP protocol for external systems
 
 <td>Wed, Apr. 22</td>
 <td class="topic">
-<a href="notes/l36.txt">Lec. 36: Putting It All Together — Agentic Biomedical AI</a>
+<a href="notes/l36.txt">Lec. 36: Personal Agent — OpenClaw</a>
 <div class="subtopic">
-full nano-claude-code architecture, REPL + skills + plugins,
-deployment (HIPAA, FDA, monitoring), live demo
-<br/><font color=#800000>end-to-end: slide screening → diagnosis → report</font>
+Same architecture, different tools. Personal agent for email, calendar, chat.
+Agent safety, evaluation, deployment
+<br/><font color=#800000>OpenClaw: the AI that actually does things</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Code: <a href="https://github.com/donglaiw/nano-claude-code">nano-claude-code</a> (full system)</li>
-  <li>Reference: <a href="https://themodernsoftware.dev">themodernsoftware.dev</a></li>
-  <li>Topics: FDA/CE approval, HIPAA, model monitoring</li>
+  <li>Code: <a href="https://github.com/openclaw/openclaw">OpenClaw</a></li>
 </ul>
 </td>
 <td><font color=#800000>ps4 due</font><br/><font color=#800000>fp slide due</font></td>
