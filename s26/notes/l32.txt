@@ -2,124 +2,48 @@
 
 **Total Time: 50 minutes**
 
-**[5 min] 0. Housekeeping**
-- **Recap**: Lec. 30–31 — multimodal foundation models (CLIP, LLaVA) can process both images and text.
-- **Today's Shift**: We move from *using* foundation models to *orchestrating* them — giving LLMs agency to act in the world.
-- **Theme 4 Overview**: Over the next 5 lectures, we will build a mini Claude Code step-by-step — a coding agent that can read files, write scripts, and run analyses. Reference implementation: nano-claude-code.
-- **Action**: ps4 out (agentic systems).
-- **Reading**: smolagents intro (HuggingFace); Anthropic API quickstart.
+**[3 min] 0. Housekeeping**
+- Roadmap image + reading (smolagents intro, Anthropic API quickstart)
 
-**[10 min] 1. The Agency Spectrum**
-- **Core Definition**: AI agents are programs where LLM outputs control the workflow.
-- **Agency is a Spectrum, Not Binary**:
-  | Level | Description | Example |
-  |-------|-------------|---------|
-  | ☆☆☆ | LLM output has no impact on flow | `process_llm_output(response)` |
-  | ★☆☆ | LLM output controls an if/else | `if llm_decision(): path_a() else: path_b()` |
-  | ★★☆ | LLM output controls function execution | `run_function(llm_chosen_tool, llm_chosen_args)` |
-  | ★★☆ | LLM controls iteration & continuation | `while llm_should_continue(): execute_next_step()` |
-  | ★★★ | One agent starts another agent | `if llm_trigger(): execute_agent()` |
-  | ★★★ | LLM writes code, defines own tools | Code agents |
-- **The Multi-Step Agent Pattern** (this is what we're building):
-  ```
-  memory = [user_task]
-  while llm_should_continue(memory):
-      action = llm_get_next_action(memory)
-      observations = execute_action(action)
-      memory += [action, observations]
-  ```
-- **When to Use Agents vs. Simpler Approaches**:
-  - If the workflow is predictable → hardcode it (100% reliable, no LLM errors).
-  - If user requests are unpredictable and require flexible tool combinations → use an agent.
-  - Example: "Is it possible to reschedule my MRI to Wednesday and still get results before my Thursday appointment?" — no fixed workflow can handle this.
-- **Biomedical Motivation**: Clinical workflows involve many variable steps (retrieve prior scans, compare, measure, report). Agents can orchestrate these flexibly.
+**[15 min] 1. WHAT: From Models to Agents**
+- **AI Evolution: The Role of Language**
+  - Deep Learning: no LLM, predefined tasks (Lec 11–25)
+  - Foundation Model: LLM, on-the-fly tasks via prompts (Lec 26–31)
+  - ???: LLM generates text → code!!! (Lec 32–36)
+- **Code #1: Control the Loop** — FM: human drives the conversation (VQA). Agent: LLM decides what to do next and when to stop.
+- **Code #2: Tool Use** — FM: talks about actions ("you should run rm..."). Agent: actually executes code with side effects.
+- **Code #3: Add Feedback** — FM: plans in one shot. Agent: executes, observes errors (e.g., OOM), adapts.
+- **Agency Spectrum**: FM → Router (#1) → Tool Call (#2) → Multi-step (#1+2+3) → Multi-Agent (N×) → Code Agent (∞)
+  - How much code does the LLM control? More code → more agency.
+- **Agents in the Wild**: 3 examples — Coding Agent (Claude Code), Personal Assistant (scheduling), Biomedical Discovery Agent (read papers → hypothesize → experiment → analyze)
+- **Demo**: Play first 2 min of "Introducing Claude Code" video
 
-**[15 min] 2. LLM API Basics**
-- **The Messages Format** (universal across providers):
-  ```python
-  messages = [
-      {"role": "system", "content": "You are a radiology assistant..."},
-      {"role": "user", "content": "Summarize this CT report..."},
-      {"role": "assistant", "content": "The report shows..."}
-  ]
-  ```
-  - Conversation is a list of role-tagged messages.
-  - System message: sets behavior, persona, constraints.
-  - Multi-turn: append user/assistant messages to continue conversation.
-- **Making an API Call** (Anthropic Python SDK):
-  ```python
-  import anthropic
-  client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
+**[8 min] 2. WHY: Three Reasons Agents Matter**
+- **Why #1: Unpredictable problems need flexible solutions** — If you can draw a flowchart → hardcode. If not → agent.
+- **Why #2: Human-in-the-loop doesn't scale** — VQA: human at every step, 1 task at a time. Agent: one prompt, autonomous, scales to 100 scans.
+- **Why #3: Tools multiply intelligence** — LLM alone = brain without hands. LLM + N tools = combinatorial power. Biological parallel: language + tool use = what separates humans from animals.
 
-  response = client.messages.create(
-      model="claude-sonnet-4-6-20250514",
-      max_tokens=1024,
-      system="You are a biomedical image analysis assistant.",
-      messages=[{"role": "user", "content": "What structures are visible in a brain MRI T1 sequence?"}]
-  )
-  print(response.content[0].text)
-  ```
-- **Streaming** — tokens arrive incrementally (important for interactive UX):
-  ```python
-  with client.messages.stream(model=..., messages=...) as stream:
-      for text in stream.text_stream:
-          print(text, end="", flush=True)
-  ```
-- **Key Parameters**:
-  - `model`: which LLM (claude-sonnet, claude-opus, gpt-4o, etc.).
-  - `max_tokens`: output length limit.
-  - `temperature`: 0 = deterministic, 1 = creative. For medical use → low temperature.
-  - `system`: system prompt (separate from messages in Anthropic API).
-- **Tokens & Cost**:
-  - LLMs process text as tokens (~0.75 words per token, or ~3.5 chars per token).
-  - Cost = input tokens + output tokens. Prices vary by model.
-  - Context window: how many tokens the model can see at once (e.g., 200K for Claude).
-- **nano-claude-code connection**: This corresponds to `providers.py` — the API abstraction layer that handles streaming and message format conversion.
+**[7 min] 3. HOW: Building Agents**
+- **What we're building**: Two columns — Coding Agent (Lec 32–35, leaked Claude Code → nano-claude-code) + Personal Agent (Lec 36, OpenClaw)
+- **Two "open-sourced" codebases for Claude Code**:
+  - nano-claude-code (5 files, ~1,200 lines, working agent) — github.com/SafeRL-Lab/cheetahclaws
+  - claw-code (66 files, architectural blueprint, 184 tools) — github.com/ultraworkers/claw-code
+- **Roadmap: Follow the Spectrum**:
+  - Lec 32: FM (API) → config.py
+  - Lec 33: Router + Tool Call + Multi-step → tools.py, agent.py, context.py, nano_claude.py
+  - Lec 34: Multi-Agent → subagent.py + biomedical agents
+  - Lec 35: Code Agent → claw-code architecture
+  - Lec 36: Personal Agent → OpenClaw
 
-**[10 min] 3. Structured Outputs & Prompt Engineering**
-- **The Problem**: Raw LLM text is hard to parse programmatically.
-- **Solution 1 — Prompt for JSON**:
-  ```python
-  prompt = """Extract findings from this radiology report as JSON:
-  {"findings": [{"structure": "...", "observation": "...", "severity": "normal|mild|severe"}]}
+**[15 min] 4. Five Things About LLM APIs**
+- **(a) API Key: Q → A** — Simplest call: import anthropic, create client, messages.create(). Key params: model, max_tokens, system, messages, temperature, tools (Lec 33). Streaming vs non-streaming.
+- **(b) Tokens & Cost** — ~0.75 words/token. Cost = input + output tokens. Model pricing (sonnet $3/$15, opus $15/$75 per M tokens). Context window = memory (200K Claude, 128K GPT-4o, 1M Gemini). Agents fill context fast.
+- **(c) Dialog — Messages Format** — Conversation = list of role-tagged messages (system, user, assistant). Append to continue multi-turn. Same format across all providers.
+- **(d) Structured Output** — Problem: raw text hard to parse. Solution: prompt for JSON. Even better: tool-based schemas (Lec 33).
+- **(e) Vision — Images + Text** — Multimodal: content = list of image + text blocks. base64 or URL. Connects to Lec 30–31 (CLIP, LLaVA). Biomed: histology, radiology, cell counting.
+- **(f) In config.py** — Maps a–e to nano-claude-code. config.py (76 lines) handles a + b. Dialog/structured/vision live in agent.py and tools.py (Lec 33).
 
-  Report: The liver shows a 2.3cm hypodense lesion in segment VII..."""
-  ```
-- **Solution 2 — Tool Use (Structured Output via Schema)** (preview for Lec. 33):
-  - Define a JSON schema; the LLM is forced to produce valid output matching it.
-  - More reliable than asking nicely in the prompt.
-- **Prompt Engineering Principles for Medical Domain**:
-  1. **Be specific**: "Extract all anatomical structures mentioned" > "Analyze this report."
-  2. **Provide examples** (few-shot): Show 1–2 input/output pairs.
-  3. **Set constraints**: "Output only the JSON. Do not include explanations."
-  4. **Domain grounding**: Include relevant medical context in the system prompt.
-  5. **Chain-of-thought**: "First identify all findings, then classify severity, then format as JSON."
-- **Vision API — Sending Images**:
-  ```python
-  response = client.messages.create(
-      model="claude-sonnet-4-6-20250514",
-      messages=[{
-          "role": "user",
-          "content": [
-              {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": img_b64}},
-              {"type": "text", "text": "Describe the histological features in this H&E stained slide."}
-          ]
-      }]
-  )
-  ```
-  - Multimodal messages: mix text and images in a single turn.
-  - Direct connection to Lec. 30–31 (multimodal FMs like LLaVA).
-
-**[5 min] 4. Live Demo: Extracting Findings from Radiology Reports**
-- Walk through a Colab notebook:
-  1. Load a sample radiology report (text).
-  2. Call Claude API with a structured extraction prompt.
-  3. Parse the JSON output.
-  4. Display results in a table: structure, finding, severity.
-- Show how changing the system prompt changes output quality.
-- Show streaming output in real time.
-
-**[5 min] 5. Wrap-Up & Looking Ahead**
-- **Key Takeaway**: LLM APIs are the foundation — messages in, text/structured data out. The agency spectrum shows us how to give LLMs increasing control over workflows.
-- **What We Built Today**: The API layer (`providers.py` in nano-claude-code) — the engine that powers everything.
-- **Next**: Lec. 33 — Tool Use & the Core Agent Loop. We'll teach the LLM to *call functions*, turning it from a text generator into an agent.
+**[2 min] 5. Wrap-Up**
+- **Today**: What (LLM → code → agent), Why (unpredictable, scale, tools), How (API basics a–e)
+- **Covered in nano-claude-code**: config.py
+- **Next Lec 33**: Tools + Agent Loop — tool schemas, while-loop, permissions, context, full REPL (tools.py, agent.py, context.py, nano_claude.py)

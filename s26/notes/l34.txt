@@ -1,133 +1,60 @@
-**Lecture 34: Coding Agent with File I/O & Bash**
+**Lecture 34: Multi-Agent & Biomedical Agents**
 
 **Total Time: 50 minutes**
 
-**[5 min] 0. Housekeeping**
-- **Recap**: Lec. 33 — tool use lets the LLM call functions; the agent loop (ReAct) drives Think → Act → Observe cycles. We built the core loop in ~30 lines.
-- **Today's Shift**: We give the agent real power — reading/writing files and executing shell commands. This turns it into a *coding agent* that can write and run its own scripts.
-- **Reading**: nano-claude-code `tools.py`, `context.py`, `compaction.py`.
+**Spectrum: Multi-Agent (N×)**
+**Code: subagent.py (commit 7f3abb7)**
+**Punchline: When 1 agent isn't enough, spawn N.**
 
-**[12 min] 1. File I/O Tools — Read, Write, Edit, Glob, Grep**
-- **Why File I/O?**: A coding agent needs to read existing code/data, create new files, and search through projects. These are the most-used tools in Claude Code.
-- **Read Tool**:
+**[3 min] 0. Housekeeping**
+- Recap Lec 33: built complete single agent (5 files, ~1,200 lines)
+- Today: scale from 1 → N agents, then apply to biomedicine
+
+**[5 min] 1. WHAT: Multi-Agent = Agent That Spawns Agents**
+- Single agent: 1 conversation, 1 tool set, 1 context window
+- Multi-agent: parent spawns children with isolated conversations + specialized tools
+- On the spectrum: Multi-Agent (N×) — one step beyond multi-step
+
+**[10 min] 2. WHY: 3 Reasons N > 1**
+- **#1 Context fills up** — long tasks exhaust the 200K window. Sub-agent gets a fresh context for each subtask.
+- **#2 Specialization** — different tasks need different tools. Explore agent (read-only) vs general agent (all tools). Fewer tools = less confusion.
+- **#3 Parallelism** — independent subtasks run simultaneously. "Refactor module A" and "write tests for module B" in parallel.
+
+**[12 min] 3. HOW: subagent.py — 3 Steps**
+- **(a) Fork**: create isolated sub-agent with subset of tools + its own conversation
   ```python
-  {"name": "Read", "input_schema": {
-      "properties": {
-          "file_path": {"type": "string"},
-          "offset": {"type": "integer", "description": "Start line number"},
-          "limit": {"type": "integer", "description": "Number of lines to read"}
-  }}}
+  def fork_subagent(prompt, tools, model):
+      state = AgentState()  # fresh conversation
+      system = build_system_prompt()  # fresh context
+      return run(prompt, state, config, system)
   ```
-  - Returns file content with line numbers (like `cat -n`).
-  - `offset` + `limit` for large files — the agent learns to read specific sections.
-  - Can also read images (base64), PDFs, Jupyter notebooks.
-- **Write Tool**: Create or overwrite a file. Auto-creates parent directories.
-  - Used for generating new scripts, saving results, creating configs.
-- **Edit Tool**: Exact string replacement — find `old_string`, replace with `new_string`.
-  - More surgical than Write — only sends the diff, not the whole file.
-  - `replace_all` flag for renaming variables across a file.
-  - The LLM must provide a unique `old_string` for the match to succeed.
-- **Glob Tool**: Find files by pattern (e.g., `**/*.py`, `slides/*.tiff`).
-  - The agent uses this to discover project structure.
-- **Grep Tool**: Regex search across files (powered by ripgrep).
-  - The agent uses this to find function definitions, imports, error messages.
-- **Implementation Pattern** (all tools follow the same shape):
-  ```python
-  def read_tool(params, config):
-      path = params["file_path"]
-      content = open(path).readlines()
-      # Add line numbers, apply offset/limit
-      return formatted_content
+- **(b) Run**: execute agent loop in subprocess/thread, stream events
+- **(c) Collect**: gather result, return to parent as tool_result
+- **Agent types** (from Claude Code):
+  | Type | Tools | Use Case |
+  |------|-------|----------|
+  | General | All | Default multi-step |
+  | Explore | Read, Glob, Grep | Fast codebase search |
+  | Plan | Read-only + output | Design before code |
 
-  register_tool(ToolDef(
-      name="Read", schema=READ_SCHEMA, func=read_tool,
-      read_only=True, concurrent_safe=True
-  ))
-  ```
+**[15 min] 4. APPLY: Biomedical Multi-Agent Workflows**
+- **The self-driving lab** (1 strong case study, not 6 scattered patterns):
+  - Planner agent → generates hypothesis
+  - Experiment agent → designs protocol, controls instruments
+  - Analysis agent → processes data, runs statistics
+  - Reasoning agent → interprets results, searches literature
+  - Loop back to planner with findings
+- **Case study**: mitochondrial DNA mutations in Drosophila (agent_005.png)
+  - Human scientist ↔ agents loop
+  - Long-term memory: prior experiments inform next hypothesis
+  - Literature search: PubMed API as a tool
+- **Agent taxonomy for biomedicine** (agent_003.png):
+  - Perception (images, genomics, text)
+  - Interaction (tool use, multi-agent, human-agent)
+  - Reasoning (chain-of-thought, feedback)
+  - Memory (long-term, short-term, learning)
 
-**[10 min] 2. The Bash Tool — Executing Commands**
-- **What It Does**: Runs shell commands and returns stdout/stderr.
-  ```python
-  {"name": "Bash", "input_schema": {
-      "properties": {
-          "command": {"type": "string", "description": "Shell command to execute"},
-          "timeout": {"type": "integer", "description": "Timeout in milliseconds"}
-  }}}
-  ```
-- **This Is Where the Power Is**: The agent can now:
-  - Run Python scripts it just wrote: `python analyze_cells.py`
-  - Install packages: `pip install scikit-image`
-  - Run git commands: `git diff`, `git log`
-  - Execute data processing pipelines: `ffmpeg`, `convert`, `ls -la`
-- **This Is Also Where the Danger Is**: The agent could `rm -rf /` or `curl malicious_url | bash`.
-- **Permission Gates** (nano-claude-code's safety model):
-  ```python
-  # Three permission modes:
-  # "auto"       — auto-approve read_only tools, ask for everything else
-  # "accept-all" — approve everything (dangerous, for trusted workflows)
-  # "manual"     — ask for every tool call
-
-  if permission_mode == "auto" and not tool_def.read_only:
-      yield PermissionRequest(tool_name, tool_args)
-      # Pause and wait for user approval
-  ```
-  - Read, Glob, Grep → `read_only=True` → auto-approved.
-  - Write, Edit, Bash → `read_only=False` → require user confirmation.
-  - In Claude Code: Bash has a whitelist of safe commands (ls, git status, npm test) that are auto-approved.
-- **Output Truncation**: Tool results > 32K chars are truncated (first 50% + last 25%) to avoid flooding the context window.
-
-**[10 min] 3. System Prompt Engineering — `context.py`**
-- **The System Prompt Grounds the Agent**: It tells the LLM who it is, what tools are available, and how to behave.
-- **nano-claude-code's `context.py`** (165 lines) assembles the system prompt from:
-  1. **Base identity**: "You are a coding assistant that helps with biomedical image analysis..."
-  2. **Current date & environment**: OS, shell, working directory.
-  3. **Git context**: current branch, recent commits, status — so the agent understands the project.
-  4. **CLAUDE.md content**: project-specific instructions (coding style, test commands, architecture notes).
-  5. **Memory index**: recalled facts from previous conversations.
-  6. **Tool usage instructions**: when to use Read vs. Bash, how to format Edit calls.
-- **Why This Matters for Biomedical AI**:
-  - System prompt can include domain knowledge: "This project analyzes H&E stained histopathology slides. Standard magnifications are 5x, 10x, 20x, 40x."
-  - Include safety constraints: "Never delete patient data. Always confirm before overwriting analysis results."
-  - Include conventions: "Use scikit-image for segmentation, pandas for statistics, matplotlib for plots."
-- **Prompt Engineering for Tool Selection**:
-  - Good tool descriptions are critical — the LLM reads them to decide which tool to call.
-  - Example: "Read: reads a file and returns contents with line numbers. Use this instead of `cat` in Bash." → guides the LLM to prefer the structured tool.
-
-**[8 min] 4. Context Window Management — `compaction.py`**
-- **The Problem**: Long conversations fill the context window (200K tokens for Claude). Tool results (file contents, command outputs) are especially large.
-- **Token Estimation**: `len(text) / 3.5` — simple heuristic that works across models.
-- **Two-Layer Compaction** (nano-claude-code's approach):
-  - **Layer 1: Snip** (rule-based, free):
-    - For old tool results (beyond the last 6 turns): truncate to first 50% + last 25%.
-    - Marker: `[... N chars snipped ...]`.
-    - Cost: O(n) string processing, zero API calls.
-  - **Layer 2: Auto-Compact** (AI-driven, costs one API call):
-    - Trigger: when `estimated_tokens > context_limit × 0.7`.
-    - Split messages into [old 70% | recent 30%].
-    - Ask the LLM to summarize the old portion.
-    - Replace old messages with the summary.
-  ```python
-  def maybe_compact(messages, context_limit):
-      tokens = sum(len(str(m)) / 3.5 for m in messages)
-      if tokens < context_limit * 0.7:
-          return messages  # no action needed
-
-      # Layer 1: snip old tool results
-      messages = snip_old_tool_results(messages, preserve_last_n=6)
-
-      # Layer 2: if still too large, AI summarization
-      tokens = sum(len(str(m)) / 3.5 for m in messages)
-      if tokens > context_limit * 0.7:
-          messages = ai_summarize_old_messages(messages)
-
-      return messages
-  ```
-- **Why This Matters**: Without compaction, long analysis sessions crash. With it, the agent can work on large codebases for hours.
-
-**[5 min] 5. Demo & Wrap-Up**
-- **Demo Scenario**: "Read all .tiff files in the `slides/` directory, write a Python script that applies Otsu thresholding to each, counts the cells, saves results to a CSV, then show me the statistics."
-  - Agent: Glob(`slides/*.tiff`) → Read a sample file → Write(`analyze.py`) → Bash(`python analyze.py`) → Read(`results.csv`) → text summary with statistics.
-  - If the script errors, the agent reads the traceback, edits the script, and retries — iterative debugging.
-- **What We Built Today**: The full tool suite (`tools.py`) + system prompt (`context.py`) + context management (`compaction.py`). Our mini Claude Code can now read, write, search, and execute.
-- **Key Takeaway**: A coding agent = agent loop + tools + system prompt + compaction. These 4 components (< 700 lines total) give you 80% of what Claude Code does.
-- **Next**: Lec. 35 — RAG, persistent memory, and multi-agent systems. We'll add the ability to search literature, remember past sessions, and delegate tasks to sub-agents.
+**[5 min] 5. Wrap-Up**
+- **3 takeaways**: context limits → fork, specialization → tool subsets, parallelism → concurrent agents
+- **Code**: subagent.py — fork, run, collect
+- **Next Lec 35**: Code Agent — what happens when you scale from 8 tools to 184? (claw-code)

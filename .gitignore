@@ -8,5 +8,6 @@ s26/lab/*.gif
 s26/lab/*.png
 s26/notes/figs
 */slides
+s26/slides
 s26/public
 .DS_Store
