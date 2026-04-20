@@ -1,54 +1,83 @@
-**Lecture 35: Code Agent — Production Architecture**
+**Lecture 35: From nano_cc to OpenClaw — Event-Driven Agent Architecture**
 
 **Total Time: 50 minutes**
 
-**Spectrum: Code Agent (∞)**
-**Code: claw-code (github.com/ultraworkers/claw-code)**
-**Punchline: From 8 tools to 184 — what scales, what breaks, what you need to add.**
+**Spectrum: Personal Agent (domain pivot)**
+**Code: build-your-own-openclaw (18-step tutorial, steps 00–10)**
+**Punchline: Decouple "where the message comes from" from "who processes it" — the event bus unlocks everything.**
 
 **[3 min] 0. Housekeeping**
-- Recap Lec 34: multi-agent (subagent.py), biomedical agent workflows
-- Today: study how a real production agent (Claude Code) is built
+- Recap L34: multi-agent (subagent.py) — fork, run, collect.
+- Today: pivot domain. Same agent loop, applied to personal productivity (Telegram/WhatsApp instead of IDE).
+- Tutorial: 18 steps, 4 phases, runnable at every step.
 
-**[7 min] 1. WHAT: From nano-claude-code to Claude Code**
-- nano-cc: 5 files, 8 tools, 1 agent type, ~1,200 lines — you built this
-- Claude Code: 184 tools, 207 commands, 5 agent types, full runtime — what's different?
-- The leaked source (Mar 31, 1:23 AM): npm .map file exposed the TypeScript source
-- claw-code: community reverse-engineered it into Python (66 files, ~2,138 lines, stubs only)
+**[4 min] 1. Bridge: nano_cc → cc → OpenClaw (minimal)**
+- nano_cc (L33): 5 files, 8 tools, 1 agent, ~1,200 lines.
+- Claude Code: 184 tools, routing, permission system, agent types. Same while-loop inside.
+- OpenClaw: same pattern, personal domain. Change the tools, keep the architecture.
+- **Punchline**: Agent pattern is domain-independent. What scales is the I/O, not the loop.
 
-**[10 min] 2. WHY: 3 Things That Change at Scale**
-- **#1 Routing becomes critical** — with 184 tools, the LLM can't see all schemas at once. Need: keyword matching, scoring, deferred tool loading. nano-cc sends all 8; Claude Code routes.
-- **#2 Context management becomes engineering** — token budget tracking, transcript compaction (summarize old turns), priority-based truncation. nano-cc: unlimited accumulation. Claude Code: query engine manages every token.
-- **#3 Permissions become a system** — not just safe/unsafe flags. Denied tools, denied prefixes, per-tool permission contexts, bash command analysis. nano-cc: 3 modes. Claude Code: full ToolPermissionContext class.
+**[8 min] 2. WHAT: OpenClaw in 18 Steps, 4 Phases**
+- Each phase removes one limitation of the previous:
+  1. **Capable Single Agent** (steps 00–06) — you already built most of this in L32–L34.
+  2. **Event-Driven Architecture** (steps 07–10) — today's focus.
+  3. **Autonomous & Multi-Agent** (steps 11–15) — L36.
+  4. **Production & Scale** (steps 16–17) — L36.
+- **Punchline**: Phase N is the fix for whatever broke in Phase N−1.
 
-**[15 min] 3. HOW: The Runtime Pipeline (4 stages)**
-- **(a) Setup**: platform detection, workspace init, prefetch
-  - bootstrap_graph.py → staged startup sequence
-- **(b) Route**: score prompt against commands + tools by keyword matching
-  - route_prompt(prompt) → ranked list of matching tools/commands
-  - This is why 184 tools work — not all loaded at once
-- **(c) Execute**: wire up executors, stream events
-  - build_execution_registry() → command/tool executors
-  - stream_submit_message() → message_start → tool_match → permission_denial → message_delta → message_stop
-- **(d) Persist**: save transcript, manage session state
-  - persist_session() → disk
+**[7 min] 3. Phase 1 Recap: You Already Built This (steps 00–06)**
+- 00 chat loop → nano_claude.py REPL.
+- 01 tools → Read/Write/Bash via function-calling schema.
+- 02 **skills** → `SKILL.md` files, lazy-loaded via a `skill` tool (keeps system prompt small).
+- 03 **persistence** → JSONL session storage (`.history/sessions/{id}.jsonl`).
+- 04 **slash commands** → `/help`, `/skills` — deterministic control plane, skips LLM.
+- 05 **compaction** → ContextGuard summarizes old turns at 80% of 200K, rolls into fresh session.
+- 06 **web tools** → WebSearch + WebRead providers (swap Tavily/Brave).
+- **Punchline**: nano_cc ≈ steps 00–01. Phase 1 adds the plumbing a real agent needs.
 
-**[10 min] 4. HOW: AgentTool/ — Agents That Spawn Agents (16 files)**
-- forkSubagent.ts → isolated sub-agent (what we built in subagent.py)
-- resumeAgent.ts → pause/continue across sessions (nano-cc can't do this)
-- agentMemory.ts → per-agent persistent memory
-- spawnMultiAgent.ts → launch N agents in parallel
-- 5 built-in types: generalPurpose, explore, plan, claudeCodeGuide, verification
-- **Key delta from L34**: resume, persistent memory, custom agent loading from directory
+**[22 min] 4. HOW: Phase 2 — Event-Driven Refactor (steps 07–10)**
+- The big idea: a pub/sub event bus sits between "where messages come from" and "who processes them."
 
-**[5 min] 5. Wrap-Up: nano-cc vs claw-code**
-| | nano-cc | claw-code |
-|---|---------|-----------|
-| Tools | 8 (all loaded) | 184 (routed) |
-| Context | accumulate | budget + compact |
-| Permissions | 3 modes | full permission system |
-| Agents | fork + run | fork + resume + memory |
-| Value | working agent | architecture map |
+**[6 min] (a) Event Bus (step 07)**
+- Problem: CLI-coupled agent can't serve Telegram + Discord + cron at once.
+- Solution: asyncio queue + subscribers.
+- Two event types: `InboundEvent` (message in), `OutboundEvent` (response out).
+- `AgentWorker` subscribes InboundEvent → runs session → publishes OutboundEvent.
+- Step 07 has **no user-visible change** — pure refactor. Keystone for phases 3–4.
+- **Punchline**: Decoupling looks pointless until you need 5 I/O channels; then it's everything.
 
-- **Punchline**: nano-cc teaches you how agents work. claw-code teaches you how agents scale.
-- **Next Lec 36**: Personal Agent — OpenClaw. Same patterns, completely different domain.
+**[3 min] (b) Config Hot Reload (step 08)**
+- Watchdog watches workspace; `Config.reload()` re-merges on file change.
+- Two-layer config: `config.user.yaml` (human-edited) + `config.runtime.yaml` (process-written).
+- Deep-merge so runtime overrides user without clobbering.
+- **Punchline**: Long-running servers can't restart on every edit.
+
+**[8 min] (c) Channels (step 09)**
+- `EventSource` ABC: platform-specific id (e.g., `platform-telegram:chat:user`).
+- `Channel` ABC: `run`/`reply`/`stop` per platform.
+- `ChannelWorker` (inbound) publishes to bus; `DeliveryWorker` (outbound) routes to channel's `reply()`.
+- Source→session cached in `config.runtime.yaml` (each chat maps to one session).
+- **Reliability**: write OutboundEvent to disk before dispatch; `ack()` deletes on successful delivery; recovery replays pending events on startup.
+- **Punchline**: Same agent, now talking to your phone. Messages don't get lost across crashes.
+
+**[5 min] (d) WebSocket (step 10)**
+- FastAPI `/ws` endpoint — another event sink alongside channels.
+- `WebSocketWorker` subscribes both InboundEvent and OutboundEvent, broadcasts JSON to connected clients.
+- Enables custom UIs, browser clients, programmatic integrations.
+- **Punchline**: Event bus = N sources in, N sinks out, 1 agent runtime.
+
+**[6 min] 5. Wrap-Up: What Phase 2 Buys You**
+
+| | nano_cc (L33) | OpenClaw Phase 1+2 |
+|---|---------------|--------------------|
+| Entry points | CLI only | CLI + Telegram + Discord + WebSocket |
+| Messages | in-memory | persisted, resumable, recoverable |
+| Skills | all loaded | lazy via `SKILL.md` |
+| Context | accumulate forever | compact at 80%, rollover |
+| Config | restart to change | hot reload |
+
+- **3 takeaways**:
+  1. Phase 1 (skills, persistence, compaction) makes a single agent survive long sessions.
+  2. Event bus decouples I/O from logic — the one refactor that enables everything downstream.
+  3. Channels + WebSocket = multi-platform for free once the bus exists.
+- **Next L36**: Phase 3 autonomy (cron, dispatch, memory) + Phase 4 production (concurrency). Agent works while you sleep.

@@ -1,49 +1,100 @@
-**Lecture 36: Personal Agent — OpenClaw + Course Wrap-Up**
+**Lecture 36: Autonomous OpenClaw — Cron, Dispatch, Memory + Course Wrap-Up**
 
 **Total Time: 50 minutes**
 
-**Spectrum: Code Agent applied to personal productivity**
-**Code: OpenClaw (github.com/openclaw/openclaw)**
-**Punchline: Same architecture, different tools. The agent pattern is domain-independent.**
+**Spectrum: Personal Agent → Autonomous Agent**
+**Code: build-your-own-openclaw (steps 11–17)**
+**Punchline: Your agent works while you sleep, talks to other agents, and remembers you across sessions.**
 
 **[3 min] 0. Housekeeping**
-- Recap Lec 35: production architecture (184 tools, routing, context management)
-- Today: apply the pattern to a new domain + wrap up Theme 4
+- Recap L35: event-driven refactor — bus decouples I/O from logic; channels + WebSocket give multi-platform.
+- Today: phases 3 & 4. Autonomy, multi-agent, production. Then course wrap-up.
 
-**[12 min] 1. WHAT: OpenClaw — Same Pattern, New Domain**
-- "The AI that actually does things" — personal agent via WhatsApp/Telegram
-- Side-by-side comparison:
-  | | Claude Code | OpenClaw |
-  |---|------------|----------|
-  | Domain | Code | Life |
-  | Tools | Read, Write, Bash, Grep | SendEmail, Calendar, BookFlight |
-  | Context | Git branch, CLAUDE.md | Contacts, preferences, history |
-  | Loop | Same while-loop | Same while-loop |
-  | Permissions | "Write this file?" | "Send this email?" |
-- **Punchline**: change the tools, keep the architecture. Agent pattern is domain-independent.
+**[6 min] 1. WHAT: Autonomy = 3 Deltas from Reactive**
+- Until now: agent only runs when a user sends a message. Synchronous and reactive.
+- Autonomous agent acts **without** a user message. 3 new capabilities:
+  1. **Time-triggered** — cron fires jobs while you sleep.
+  2. **Agent-to-agent** — one agent delegates to another via the same bus.
+  3. **Cross-session** — durable memory survives session rollover.
+- **Punchline**: Reactive agent → Proactive agent. The event bus makes this a plug-in, not a rewrite.
 
-**[10 min] 2. WHY: 3 Levels of Agent Safety**
-- **#1 Permissions** (what we built in L33): gate individual tool calls. Read=safe, Bash=ask.
-- **#2 Sandboxing**: run agent in isolated environment. Docker containers, VM, restricted filesystem. Limits blast radius.
-- **#3 Evaluation**: how do you know the agent works? Benchmarks (SWE-bench for coding), sandboxed tests, human review loops.
-- **Stakes scale with domain**: wrong code commit < wrong email sent < wrong medical diagnosis. Safety investment must match stakes.
+**[6 min] 2. WHY: 3 Forces Driving Phase 3**
+- **#1 Scheduled work** — "Every morning at 8am, summarize new arXiv papers in connectomics."
+- **#2 Specialization by source** — chat agent on Telegram, memory agent on WebSocket, scheduler agent for cron. Same process.
+- **#3 Knowledge accumulation** — per-session history dies at compaction. Need durable, cross-session memory.
+- **Punchline**: Each force maps to one step in Phase 3.
 
-**[10 min] 3. HOW: Building Domain-Specific Agents (3 steps)**
-- **(a) Pick your tools**: what actions does your domain need? (PubMed search, DICOM viewer, email sender...)
-- **(b) Write your context**: domain-specific system prompt + CLAUDE.md equivalent. Medical agent needs different instructions than coding agent.
-- **(c) Set your permissions**: which tools are safe? Which need human approval? Domain determines the answer.
-- **That's it.** The loop (agent.py), the dispatcher (tools.py), the REPL (nano_claude.py) stay the same.
+**[20 min] 3. HOW: Phase 3 — 5 Incremental Steps**
 
-**[12 min] 4. The Full Spectrum: L32–L36 Recap**
-- **L32**: FM (API) — call an LLM, get text back. config.py.
-- **L33**: Multi-step Agent — tools + loop + feedback. 4 files, working agent.
-- **L34**: Multi-Agent — fork, run, collect. Biomedical workflows.
-- **L35**: Code Agent at Scale — routing, context management, 184 tools.
-- **L36**: Personal Agent — same architecture, different tools.
-- **The punchline of Theme 4**: An agent is just a while loop + tool dispatch + permission gate. ~1,200 lines. Everything else is scaling.
+**[4 min] (a) Multi-Agent Routing (step 11)**
+- `AgentLoader` discovers N `AGENT.md` files in workspace.
+- `RoutingTable`: source regex → agent, with tier specificity (exact > regex > wildcard); most-specific wins.
+- Fallback to `default_agent` when no binding matches.
+- New commands: `/route`, `/bindings`, `/agents`.
+- **Punchline**: Route by **source**, not by content. Simple rules, powerful behavior.
 
-**[3 min] 5. Wrap-Up & Looking Ahead**
-- **Theme 4 complete**: you can build, scale, and deploy agents
-- **PS4 due**: agentic systems assignment
-- **Final project slides due**: apply agent concepts to your research domain
-- **Next**: Final project presentations (Lec 37–39)
+**[5 min] (b) Cron + Heartbeat (step 12)**
+- `CRON.md` files: id, agent, cron expression, prompt, one_off flag.
+- `CronWorker` ticks every 60s, publishes `DispatchEvent` for due jobs.
+- New event type: `DispatchEvent` (non-user-originated execution).
+- Cron ops exposed as a **skill**, not a tool — keeps tool registry lean.
+- **Punchline**: Cron publishes to the same bus. Agent runtime doesn't know user vs cron.
+
+**[3 min] (c) Multi-Layer Prompts (step 13)**
+- `PromptBuilder.build()` concatenates 5 layers:
+  1. Identity (`AGENT.md`)
+  2. Soul/personality (`SOUL.md`)
+  3. Bootstrap context (`BOOTSTRAP.md`, `AGENTS.md`, active crons)
+  4. Runtime (agent id, timestamp)
+  5. Channel hint (which platform this message came from)
+- **Punchline**: System prompt is a **composition**, not a constant. Memory/project layers plug in later.
+
+**[4 min] (d) Post-Message-Back (step 14)**
+- `post_message` tool: agent publishes `OutboundEvent` directly to bus with `AgentEventSource`.
+- `DeliveryWorker` (from step 09) picks it up — reuses existing channel delivery path.
+- Tool **only registered in cron context** — prevents agents from spamming during normal turns.
+- **Punchline**: Closes the autonomy loop. Cron can now actually reach the user.
+
+**[4 min] (e) Agent Dispatch (step 15)**
+- `create_subagent_dispatch_tool` factory: schema dynamically lists dispatchable agents (excludes caller).
+- Mechanism: publish `DispatchEvent`, subscribe a temp `DispatchResultEvent` handler filtered by session_id, await a future.
+- Like L34's `fork_subagent`, but via event bus — in-process, not subprocess.
+- `parent_session_id` tracks the delegation chain.
+- **Punchline**: Agents collaborate through the bus, same as channels do. Uniform mechanism.
+
+**[6 min] 4. HOW: Phase 4 — Production (steps 16–17)**
+
+**[3 min] (a) Concurrency Control (step 16)**
+- `AgentDef.max_concurrency` — per-agent limit.
+- `AgentWorker` holds `dict[agent_id, asyncio.Semaphore]`; `async with sem` gates session entry.
+- Channels + cron + dispatch can all fire the same agent simultaneously → API quota burn and OOM.
+- **Punchline**: Event bus is powerful; semaphore is the adult supervision.
+
+**[3 min] (b) Long-Term Memory (step 17)**
+- Dedicated memory agent (`cookie`), accessed via subagent dispatch (step 15).
+- Memory stored as markdown files: `memories/topics/`, `memories/projects/`, `memories/daily-notes/`.
+- Main agent (`pickle`) asks cookie via dispatch; cookie reads/writes the files.
+- Alternatives: direct tools in main agent, skill-based grep, vector DB for semantic search.
+- **Punchline**: Memory is just another agent. Every capability composes via the bus.
+
+**[5 min] 5. Course Wrap-Up: L32–L36 Spectrum**
+
+| Lec | Capability | Artifact |
+|-----|-----------|----------|
+| L32 | FM via API | config.py |
+| L33 | Multi-step Agent | nano_cc (5 files, 1,200 lines) |
+| L34 | Multi-Agent | subagent.py (fork/run/collect) |
+| L35 | Event-Driven | bus + channels + WebSocket |
+| L36 | Autonomous | cron + dispatch + memory |
+
+- **Theme 4 punchline**: an agent is a while loop. A production agent is a while loop + event bus + workspace. Everything else is scaling.
+- **3 takeaways for the whole theme**:
+  1. The loop is tiny (~100 lines). The I/O and state around it is where engineering lives.
+  2. Decoupling (event bus) is the refactor that unlocks multi-channel, multi-agent, autonomy.
+  3. Every advanced capability (cron, dispatch, memory) is **another subscriber on the same bus**.
+
+**[4 min] 6. Looking Ahead**
+- **PS4 due**: agentic systems assignment.
+- **Final project slides due**: apply agent concepts to your research domain.
+- **Lec 37–39**: final project presentations.
+- Go build something that works while you sleep.

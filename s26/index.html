@@ -731,8 +731,7 @@ BiomedCLIP, SlideChat; domain adaptation, whole-slide pathology
 <td rowspan=6 style="vertical-align:middle;text-align:center;">Agentic Systems<br />[Week 14-15]</td>
 <td>Mon, Apr. 13</td>
 <td class="topic">
-<a href="notes/l32.txt">Lec. 32: LLM APIs & the Agency Spectrum</a>
- | <a href="https://www.dropbox.com/scl/fi/81iu2pq2wmv643i6d2vyq/l32_slides.pdf?rlkey=87s0s05sbo2qgr7cz3ruy5o6z&dl=0">slides</a>
+<a href="https://www.dropbox.com/scl/fi/81iu2pq2wmv643i6d2vyq/l32_slides.pdf?rlkey=87s0s05sbo2qgr7cz3ruy5o6z&dl=0">Lec. 32: LLM APIs & the Agency Spectrum</a>
 <div class="subtopic">
 What/Why/How of agents. AI evolution: role of language (DL → FM → Agent).
 Agency spectrum. LLM API basics (5 things: API call, tokens, dialog, structured output, vision).
@@ -741,6 +740,7 @@ Agency spectrum. LLM API basics (5 things: API call, tokens, dialog, structured 
 </td>
 <td>
 <ul class="materials">
+  <li>Notes: <a href="notes/l32.txt">L32 outline</a></li>
   <li>Concept: <a href="https://huggingface.co/docs/smolagents/conceptual_guides/intro_agents">smolagents: intro to agents</a></li>
   <li>Coding: <a href="https://docs.anthropic.com/en/docs/initial-setup">Anthropic API quickstart</a></li>
   <li>Code: <a href="https://github.com/SafeRL-Lab/cheetahclaws/tree/79aefea578ca564658edc9d8eebe1c532f7affc6">nano-claude-code</a></li>
@@ -752,7 +752,7 @@ Agency spectrum. LLM API basics (5 things: API call, tokens, dialog, structured 
 
 <td>Wed, Apr. 15</td>
 <td class="topic">
-<a href="notes/l33.txt">Lec. 33: Tool Use & the Agent Loop</a>
+<a href="https://www.dropbox.com/scl/fi/276qrxie29zqkog4koz6m/l33_slides.pdf?rlkey=ixctk77wy7gghvzeu3k4x5neh&dl=0">Lec. 33: Tool Use & the Agent Loop</a>
 <div class="subtopic">
 Tool schemas (JSON), tool dispatch, the agent while-loop (ReAct),
 permission system, context (CLAUDE.md), full REPL
@@ -761,6 +761,7 @@ permission system, context (CLAUDE.md), full REPL
 </td>
 <td>
 <ul class="materials">
+  <li>Notes: <a href="notes/l33.txt">L33 outline</a></li>
   <li>Tutorial: <a href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use">Claude tool use</a></li>
   <li>Code: <a href="https://github.com/SafeRL-Lab/cheetahclaws/tree/79aefea578ca564658edc9d8eebe1c532f7affc6">nano-claude-code</a></li>
 </ul>
@@ -771,7 +772,7 @@ permission system, context (CLAUDE.md), full REPL
 
 <td>Fri, Apr. 17</td>
 <td class="topic">
-<a href="notes/l34.txt">Lec. 34: Multi-Agent & Biomedical Agents</a>
+<a href="https://www.dropbox.com/scl/fi/ga8wiyqi3duv2owgi6asr/l34_slides.pdf?rlkey=brdq205853ruxp65u2dc08db6&dl=0">Lec. 34: Multi-Agent & Biomedical Agents</a>
 <div class="subtopic">
 Sub-agent spawning, parallel execution, biomedical agent applications
 (self-driving labs, clinical workflows, research agents)
@@ -780,6 +781,7 @@ Sub-agent spawning, parallel execution, biomedical agent applications
 </td>
 <td>
 <ul class="materials">
+  <li>Notes: <a href="notes/l34.txt">L34 outline</a></li>
   <li>Code: <a href="https://github.com/SafeRL-Lab/cheetahclaws/tree/7f3abb7">nano-claude-code (subagent)</a></li>
   <li>Reference: <a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview">Prompt engineering guide</a></li>
 </ul>
@@ -790,17 +792,18 @@ Sub-agent spawning, parallel execution, biomedical agent applications
 <tr>
 <td>Tue, Apr. 21 <br />(Mon class)</td>
 <td class="topic">
-<a href="notes/l35.txt">Lec. 35: Code Agent — Production Architecture</a>
+<a href="notes/l35.txt">Lec. 35: From nano_cc to OpenClaw — Event-Driven Agent Architecture</a>
 <div class="subtopic">
-Claude Code architecture (184 tools, 207 commands, 5 sub-agent types),
-runtime pipeline (setup → route → execute → stream), reverse engineering
-<br/><font color=#800000>claw-code: architectural blueprint of Claude Code</font>
+Phase 1 recap (skills, persistence, compaction, web tools);
+Phase 2 refactor to event bus, channels (Telegram/Discord), WebSocket, delivery reliability
+<br/><font color=#800000>build-your-own-openclaw: steps 00–10</font>
 </div>
 </td>
 <td>
 <ul class="materials">
-  <li>Code: <a href="https://github.com/ultraworkers/claw-code">claw-code</a></li>
-  <li>Spec: <a href="https://modelcontextprotocol.io/">Model Context Protocol</a></li>
+  <li>Slides: <a href="slides/l35_slides.html">L35 slides</a></li>
+  <li>Tutorial: <a href="https://github.com/openclaw/build-your-own-openclaw">build-your-own-openclaw</a></li>
+  <li>Reference impl: <a href="https://github.com/czl9707/pickle-bot">pickle-bot</a></li>
 </ul>
 </td>
 <td></td>
@@ -809,16 +812,18 @@ runtime pipeline (setup → route → execute → stream), reverse engineering
 
 <td>Wed, Apr. 22</td>
 <td class="topic">
-<a href="notes/l36.txt">Lec. 36: Personal Agent — OpenClaw</a>
+<a href="notes/l36.txt">Lec. 36: Autonomous OpenClaw — Cron, Dispatch, Memory</a>
 <div class="subtopic">
-Same architecture, different tools. Personal agent for email, calendar, chat.
-Agent safety, evaluation, deployment
-<br/><font color=#800000>OpenClaw: the AI that actually does things</font>
+Phase 3 autonomy: multi-agent routing, cron + heartbeat, multi-layer prompts,
+post-message-back, agent dispatch. Phase 4: concurrency control, long-term memory. Course wrap-up.
+<br/><font color=#800000>build-your-own-openclaw: steps 11–17</font>
 </div>
 </td>
 <td>
 <ul class="materials">
+  <li>Slides: <a href="slides/l36_slides.html">L36 slides</a></li>
   <li>Code: <a href="https://github.com/openclaw/openclaw">OpenClaw</a></li>
+  <li>Summary: <a href="notes/openclaw_tutorial.md">OpenClaw tutorial summary</a></li>
 </ul>
 </td>
 <td><font color=#800000>ps4 due</font><br/><font color=#800000>fp slide due</font></td>
